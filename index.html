@@ -294,20 +294,8 @@
         background: #f0f0f0; /* or var(--bg) */
       }
     </style>
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
-    <!-- Sign‑in overlay (appears until user is authenticated) -->
-    <div id="loginOverlay" style="position:fixed;inset:0;background:#e9f1f7;display:flex;align-items:center;justify-content:center;z-index:10000;">
-      <div id="g_id_onload"
-           data-client_id="285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com"
-           data-context="signin"
-           data-callback="handleCredential">
-      </div>
-      <div class="g_id_signin" data-type="standard"></div>
-    </div>
-    <!-- /Sign‑in overlay -->
     <div class="card">
       <h2>Worksheet Generator</h2>
       <div id="bulkSection">
@@ -377,27 +365,6 @@
     <!-- Removed historyPopup container -->
 
     <script>
-      // ---------- Google Sign‑In ----------
-      let signedIn = false;
-      function handleCredential(resp){
-        // Hide overlay once we have a token
-        document.getElementById('loginOverlay').style.display = 'none';
-        if (!signedIn){
-          signedIn = true;
-          startApp();          // call our app‑bootstrap
-        }
-      }
-      function startApp(){
-        loadPrevious();        // original startup work
-      }
-      window.addEventListener('load',()=>{
-        google.accounts.id.initialize({
-          client_id:'285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com',
-          callback:handleCredential
-        });
-        google.accounts.id.prompt();  // show Sign‑in
-      });
-      // ---------- /Google Sign‑In ----------
       // Replace/Skip modal controls
       const API_URL = 'https://script.google.com/macros/s/AKfycbwRPsqP7o04EEOjKNygILkqemp1WgCz2itpvk-Kj9Kvdk8D0YQNrpmIXsOmZZkFaaR_4A/exec';
       /**
@@ -1019,6 +986,7 @@
       });
       // Removed all history popup and related logic
     // On page load, show the recent lessons table immediately
+    loadPrevious();
     // Live update relative “x ago” for generated-time cells
     setInterval(() => {
       document.querySelectorAll('.generated-time').forEach(cell => {
