@@ -603,13 +603,18 @@
           .then(r => r.json())
           .then(json => {
             if (json.success) {
-              window.open(json.data.packageUrl, '_blank');
+              // The server currently returns the URL directly as a string.
+              // Support both formats just in case.
+              const packageUrl = typeof json.data === 'string'
+                ? json.data
+                : json.data.packageUrl;
+
               if (spin) spin.style.display = 'none';
               if (btn) {
                 btn.classList.remove('btn-pulsing');
-                btn.textContent = 'Done';
+                btn.textContent = 'Open';
                 btn.disabled = false;
-                btn.onclick = () => window.open(json.data.packageUrl, '_blank');
+                btn.onclick = () => window.open(packageUrl, '_blank');
               }
             } else {
               if (spin) spin.style.display = 'none';
