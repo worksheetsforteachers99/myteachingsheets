@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Worksheet Generator</title>
+    <style>
+      :root {
+        --brand: #005f73;
+        --brand-dark: #003d4d;
+        --accent: #0a9396;
+        --accent-dark: #056b6f;
+        --bg: #e9f1f7;
+        --fg: #102a43;
+        --card: #fff;
+        --radius: 0.75em;
+        --shadow: 0 4px 20px rgba(0,0,0,0.1);
+      }
+      * { box-sizing:border-box; margin:0; padding:0; }
+      body {
+        display:flex; justify-content:center; align-items:center;
+        height:100vh; background:var(--bg);
+        font-family:'Segoe UI',sans-serif; color:var(--fg);
+      }
+      .card {
+        width: 90vw;
+        max-width: 800px;
+        padding: 2em;
+        background: var(--card);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        position: relative;
+      }
+      h2 {
+        text-align:center; margin-bottom:1.5em;
+        color:var(--brand);
+      }
+      .form-group { margin-bottom:1em; }
+      label { display:block; font-size:0.9em; margin-bottom:0.3em; }
+      select, input {
+        width:100%; padding:0.6em 1em;
+        font-size:1em; border:1.5px solid #b8c2cc;
+        border-radius:0.5em; outline:none;
+        transition:border-color 0.2s, box-shadow 0.2s;
+      }
+      select:focus, input:focus {
+        border-color:var(--brand);
+        box-shadow:0 0 0 3px rgba(0,95,115,0.1);
+      }
+      .progress-group { margin-top:1em; display:none; }
+      .progress-bar {
+        height:0.5em; width:100%; background:#d9e2ec;
+        border-radius:0.25em; overflow:hidden;
+      }
+      .progress-bar-fill {
+        height:100%; width:0%; background:var(--brand);
+        transition:width 0.2s;
+      }
+      .progress-text {
+        text-align:right; font-size:0.85em; margin-top:0.3em;
+      }
+      .progress-text {
+        display: none;
+      }
+      .button-row {
+        display:flex; gap:0.5em; margin-top:1em;
+      }
+      button {
+        flex:1; position:relative;
+        padding:0.6em; font-size:1em; font-weight:600;
+        border:none; border-radius:0.5em; cursor:pointer;
+        color:#fff; transition:background 0.2s;
+      }
+      .btn-doc      { background:var(--brand); }
+      .btn-doc:hover      { background:var(--brand-dark); }
+      .btn-pdf      { background:var(--accent); }
+      .btn-pdf:hover      { background:var(--accent-dark); }
+      .btn-form     { background:#ee9b00; } /* amber accent */
+      .btn-form:hover     { background:#c77f00; }
+      .btn-package {
+        background: #2a9d8f; /* a distinct teal */
+      }
+      .btn-package:hover {
+        background: #21867a; /* darker on hover */
+      }
+      button[disabled]    { opacity:0.6; cursor:default; }
+      /* Center text in Stop Bulk button */
+      #btnStopBulk {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      /* Pulse animation for package button */
+      @keyframes pulse {
+        0% { transform: scale(1); background-color: #2a9d8f; }
+        50% { transform: scale(1.05); background-color: #21867a; }
+        100% { transform: scale(1); background-color: #2a9d8f; }
+      }
+      .btn-pulsing {
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+
+      /* Preview buttons matching lesson code cell color */
+      .btn-preview {
+        background: #d9e2ec;
+        color: var(--fg);
+        border: none;          /* remove outline */
+        font-weight: normal;   /* normal text weight */
+        box-shadow: none;      /* remove any shadow */
+      }
+      .btn-preview:hover:not([disabled]) {
+        background: #c8d9e2;
+      }
+
+      /* Compact icon buttons */
+      .icon-btn {
+        background: transparent;
+        border: none;
+        width: 1.5em;
+        height: 1.5em;
+        padding: 0;
+        margin: 0;
+        font-size: 1.2em;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .icon-btn:hover {
+        background: rgba(0,0,0,0.1);
+        border-radius: 0.25em;
+      }
+
+      /* Menu button */
+      .menu-btn {
+        background: transparent;
+        border: none;
+        font-size: 1.25em;
+        cursor: pointer;
+        color: var(--fg);
+        padding: 0 0.5em;
+      }
+      .menu-btn:hover {
+        background: rgba(0,0,0,0.05);
+        border-radius: 0.25em;
+      }
+      /* Context menu “Select” item styling (same as others) */
+
+      /* Style for per-row action dropdown */
+      .action-select {
+        width: 100%;
+        padding: 0.3em;
+        font-size: 0.9em;
+        border: 1px solid #b8c2cc;
+        border-radius: 0.25em;
+        cursor: pointer;
+      }
+
+      .spinner {
+        width:1em; height:1em;
+        border:2px solid rgba(0,0,0,0.2);
+        border-top-color: var(--brand);
+        border-radius:50%;
+        animation:spin 0.75s linear infinite;
+        position:absolute; top:50%; left:50%;
+        transform:translate(-50%,-50%);
+        display:none;
+      }
+      @keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
+
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50%      { opacity: 0; }
+      }
+      .blinkPopup {
+        animation: blink 1s ease-in-out infinite;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
+      .fadeIn {
+        animation: fadeIn 0.5s ease-in-out forwards;
+      }
+      /* Apply blinking animation to each cell in the blinking row */
+      .blinking td {
+        animation: blink 1.5s ease-in-out infinite;
+      }
+
+      /* Modern bulk table styles */
+      #bulkTableContainer {
+        margin-top: 1em;
+        overflow: auto;
+        /* Hide scrollbars but allow scrolling */
+      }
+      #bulkTable {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0; /* remove row gaps */
+        font-size: 1em;
+      }
+      #bulkTable {
+        border-collapse: collapse;
+      }
+      #bulkTable th, #bulkTable td {
+        border: none;
+      }
+      /* Header pills */
+      #bulkTable thead th {
+        background: var(--brand);
+        color: #fff;
+        padding: 0.75em 1em;
+        text-align: left;
+      }
+      #bulkTable thead th:first-child {
+        border-top-left-radius: 0.5em;
+      }
+      #bulkTable thead th:last-child {
+        border-top-right-radius: 0.5em;
+      }
+      /* Row cards */
+      #bulkTable tr {
+        background: #fff;
+        /* no border on table rows */
+      }
+      /* First column styling */
+      #bulkTable td:first-child {
+        background: #d9e2ec;
+        color: var(--fg);
+        padding: 0.75em 1em;
+        border-radius: 0;
+      }
+      /* Last (Actions) column styling */
+      #bulkTable td.actions {
+        background: var(--accent-dark);
+        color: #fff;
+        padding: 0.75em 1em;
+        border-top-right-radius: 0.5em;
+        border-bottom-right-radius: 0.5em;
+      }
+      #bulkTable td.menu-cell {
+        background: #f7fbfc;
+        color: var(--fg);
+        padding: 0.75em 1em;
+        border-radius: 0;
+        text-align: right;
+      }
+      /* Middle cells */
+      #bulkTable td {
+        background: #f7fbfc;
+        padding: 0.75em 1em;
+        color: var(--fg);
+      }
+      /* Button cells remove extra padding */
+      #bulkTable td.actions select {
+        background: transparent;
+        color: #fff;
+        border: none;
+        width: auto;
+      }
+
+      /* Worksheet and Answer Key column styling */
+      #bulkTable th.col-worksheet,
+      #bulkTable td.col-worksheet {
+        background: #e0f2f1; /* a soft teal */
+      }
+      #bulkTable th.col-answer,
+      #bulkTable td.col-answer {
+        background: #f1f8e9; /* a soft green */
+      }
+      /* Context menu styling */
+      #contextMenu {
+        position: absolute;
+        z-index: 10002; /* above popup */
+        display: none;
+        background: #fff;
+        /* remove border, use shadow */
+        border: none;
+        border-radius: 0.5em;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        overflow: hidden;
+      }
+      .context-menu__item {
+        padding: 0.75em 1em;
+        cursor: pointer;
+        white-space: nowrap;
+        font-size: 0.95em;
+      }
+      .context-menu__item + .context-menu__item {
+        border-top: 1px solid #eee;
+      }
+      .context-menu__item:hover {
+        background: #f0f0f0; /* or var(--bg) */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Worksheet Generator</h2>
+      <div id="bulkSection">
+        <div class="form-group">
+          <label for="bulkGrade">Grade Level</label>
+          <select id="bulkGrade">
+            <option value="" disabled selected>Select grade</option>
+            <option>6</option><option>7</option><option>8</option>
+            <option>9</option><option>10</option><option>11</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="bulkDomain">Domain to Generate</label>
+          <select id="bulkDomain">
+            <option value="" disabled selected>Select domain</option>
+            <option value="Physical Science">Physical Science</option>
+            <option value="Life Science">Life Science</option>
+            <option value="Earth & Space Science">Earth & Space Science</option>
+            <option value="Engineering & Tech">Engineering & Tech</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="bulkLesson">Lesson Code</label>
+          <select id="bulkLesson" disabled>
+            <option value="" disabled selected>Select code</option>
+          </select>
+        </div>
+        <!-- Load Previously Generated button moved to absolute position -->
+        <!-- Bulk Generate Docs Button -->
+        <div class="button-row">
+          <button class="btn-doc" id="btnBulkDocs" onclick="bulkGenerateDocs()">
+            <span class="btn-label">Generate</span>
+            <div class="spinner" id="spinnerBulk"></div>
+          </button>
+        </div>
+        <!-- Stop Bulk Generate Button -->
+        <div class="button-row">
+          <button class="btn-package" id="btnStopBulk" onclick="stopBulkGenerate()" disabled
+                  style="display:none;"
+          >
+            <span class="btn-label">Stop Generate</span>
+          </button>
+        </div>
+        <!-- Container for bulk review table -->
+        <div id="bulkTableContainer"></div>
+        <!-- Row context menu -->
+        <div id="contextMenu">
+          <div class="context-menu__item" data-action="viewWorksheet">View Worksheet</div>
+          <div class="context-menu__item" data-action="viewAnswerKey">View Answer Key</div>
+          <div class="context-menu__item" data-action="generatePackage">Generate Package</div>
+          <div class="context-menu__item" data-action="regenerateLesson">Regenerate</div>
+          <div class="context-menu__item" data-action="deleteLesson">Delete</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Replace/Skip Modal -->
+    <div id="replaceModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:10;">
+      <div style="background:#fff; padding:1.5em; border-radius:0.5em; max-width: 400px; width:90%; text-align:center;">
+        <p id="modalMessage" style="margin-bottom:1em; font-size:1em; color:#102a43;"></p>
+        <div class="button-row">
+          <button class="btn-package" id="modalReplaceBtn">Replace</button>
+          <button class="btn-form" id="modalSkipBtn">Skip</button>
+        </div>
+      </div>
+    </div>
+    <!-- Removed historyPopup container -->
+
+    <script>
+      // Replace/Skip modal controls
+      const lessonUrls = {};
+      const replaceModal     = document.getElementById('replaceModal');
+      const modalMessage     = document.getElementById('modalMessage');
+      const modalReplaceBtn  = document.getElementById('modalReplaceBtn');
+      const modalSkipBtn     = document.getElementById('modalSkipBtn');
+      let modalResolve; // to signal choice
+
+      function showReplaceModal(message) {
+        modalMessage.textContent = message;
+        replaceModal.style.display = 'flex';
+        return new Promise(resolve => { modalResolve = resolve; });
+      }
+
+      modalReplaceBtn.addEventListener('click', () => {
+        replaceModal.style.display = 'none';
+        modalResolve('replace');
+      });
+      modalSkipBtn.addEventListener('click', () => {
+        replaceModal.style.display = 'none';
+        modalResolve('skip');
+      });
+      let latestDocUrl = null, latestAnswerKeyUrl = null, progInt;
+      let bulkCancelled = false;
+
+      // Bulk container & spinner refs
+      const bulkTableContainer = document.getElementById('bulkTableContainer');
+      // Recent toggle logic
+      let recentMode = false;
+      const spinnerBulk = document.getElementById('spinnerBulk');
+      const stopBulkBtn = document.getElementById('btnStopBulk');
+      const bulkDomain = document.getElementById('bulkDomain');
+      const bulkLesson = document.getElementById('bulkLesson');
+      // Populate lesson codes on domain change in Bulk Mode
+      bulkDomain.addEventListener('change', function() {
+        const grade = parseInt(bulkGrade.value, 10);
+        let prefix = '';
+        if (grade >= 6 && grade <= 8) prefix = 'MS';
+        else if (grade >= 9 && grade <= 12) prefix = 'HS';
+        const codes = prefix && groupedCodes[prefix] && groupedCodes[prefix][bulkDomain.value]
+          ? groupedCodes[prefix][bulkDomain.value] : [];
+        // Populate bulkLesson dropdown
+        bulkLesson.innerHTML = '<option value="" disabled selected>Select code</option>';
+        codes.forEach(code => {
+          const opt = document.createElement('option');
+          opt.value = code;
+          opt.textContent = code;
+          bulkLesson.appendChild(opt);
+        });
+        bulkLesson.disabled = codes.length === 0;
+      });
+
+      const groupedCodes = {
+        MS: {
+          "Physical Science": [
+            'MS-PS1-1','MS-PS1-2','MS-PS1-3','MS-PS1-4','MS-PS1-5','MS-PS1-6',
+            'MS-PS2-1','MS-PS2-2','MS-PS2-3','MS-PS2-4','MS-PS2-5',
+            'MS-PS3-1','MS-PS3-2','MS-PS3-3','MS-PS3-4','MS-PS3-5',
+            'MS-PS4-1','MS-PS4-2','MS-PS4-3'
+          ],
+          "Life Science": [
+            'MS-LS1-1','MS-LS1-2','MS-LS1-3','MS-LS1-4','MS-LS1-5','MS-LS1-6','MS-LS1-7','MS-LS1-8',
+            'MS-LS2-1','MS-LS2-2','MS-LS2-3','MS-LS2-4','MS-LS2-5',
+            'MS-LS3-1','MS-LS3-2',
+            'MS-LS4-1','MS-LS4-2','MS-LS4-3','MS-LS4-4','MS-LS4-5','MS-LS4-6'
+          ],
+          "Earth & Space Science": [
+            'MS-ESS1-1','MS-ESS1-2','MS-ESS1-3','MS-ESS1-4',
+            'MS-ESS2-1','MS-ESS2-2','MS-ESS2-3','MS-ESS2-4','MS-ESS2-5','MS-ESS2-6',
+            'MS-ESS3-1','MS-ESS3-2','MS-ESS3-3','MS-ESS3-4','MS-ESS3-5'
+          ],
+          "Engineering & Tech": [
+            'MS-ETS1-1','MS-ETS1-2','MS-ETS1-3','MS-ETS1-4'
+          ]
+        },
+        HS: {
+          "Physical Science": [
+            'HS-PS1-1','HS-PS1-2','HS-PS1-3','HS-PS1-4','HS-PS1-5','HS-PS1-6',
+            'HS-PS2-1','HS-PS2-2','HS-PS2-3','HS-PS2-4',
+            'HS-PS3-1','HS-PS3-2','HS-PS3-3','HS-PS3-4','HS-PS3-5',
+            'HS-PS4-1','HS-PS4-2','HS-PS4-3','HS-PS4-4'
+          ],
+          "Life Science": [
+            'HS-LS1-1','HS-LS1-2','HS-LS1-3','HS-LS1-4',
+            'HS-LS2-1','HS-LS2-2','HS-LS2-3','HS-LS2-4','HS-LS2-5',
+            'HS-LS3-1','HS-LS3-2','HS-LS3-3',
+            'HS-LS4-1','HS-LS2-2','HS-LS4-3','HS-LS4-4','HS-LS4-5','HS-LS4-6'
+          ],
+          "Earth & Space Science": [
+            'HS-ESS1-1','HS-ESS1-2','HS-ESS1-3',
+            'HS-ESS2-1','HS-ESS2-2','HS-ESS2-3','HS-ESS2-4','HS-ESS2-5',
+            'HS-ESS3-1','HS-ESS3-2','HS-ESS3-3','HS-ESS3-4','HS-ESS3-5'
+          ],
+          "Engineering & Tech": [
+            'HS-ETS1-1','HS-ETS1-2','HS-ETS1-3','HS-ETS1-4'
+          ]
+        }
+      };
+
+      // Only these four domains
+      const DOMAINS = [
+        "Physical Science",
+        "Life Science",
+        "Earth & Space Science",
+        "Engineering & Tech"
+      ];
+      // (Manual mode code removed)
+
+      // Show placeholder blinking rows in the main table
+      function showMainPlaceholder() {
+        const container = bulkTableContainer;
+        // build table with Grade + other headers
+        container.innerHTML = '<table id="bulkTable"><thead><tr>'
+          + '<th>Grade</th>'
+          + '<th>Lesson</th>'
+          + '<th>Worksheet</th>'
+          + '<th>Answer Key</th>'
+          + '<th>Last Edit</th>'
+          + '<th>Package</th>'
+          + '<th class="menu-cell"></th>'
+          + '</tr></thead><tbody id="bulkTableBody">';
+        const placeholderRows = 5;
+        for (let i = 0; i < placeholderRows; i++) {
+          container.innerHTML += '<tr class="blinking">'
+            + '<td>&nbsp;</td>'.repeat(7)
+            + '</tr>';
+        }
+        container.innerHTML += '</tbody></table>';
+      }
+
+      /**
+       * Adds a row placeholder for a lesson code.
+       */
+      function addTableRow(tbody, code, grade) {
+        const row = document.createElement('tr');
+        row.id = `row_${grade}_${code}`;
+        row.innerHTML = `
+          <td>${grade}</td>
+          <td>${code}</td>
+          <td>
+            <button class="btn-preview" id="viewW_${grade}_${code}" disabled>Worksheet</button>
+            <div class="spinner" id="spin_doc_${code}"></div>
+          </td>
+          <td>
+            <button class="btn-preview" id="viewA_${grade}_${code}" disabled>Answer Key</button>
+            <div class="spinner" id="spin_ans_${code}"></div>
+          </td>
+          <td class="generated-time"></td>
+          <td style="padding-right:0.5em;">
+            <button class="btn-package" disabled id="pkg_${grade}_${code}" onclick="generatePackageForLesson('${code}', '${grade}')">Generate</button>
+            <div class="spinner" id="spin_pkg_${code}"></div>
+          </td>
+          <td class="menu-cell">
+            <button class="menu-btn" id="menu_${grade}_${code}">⋮</button>
+          </td>`;
+        tbody.appendChild(row);
+      }
+
+      /**
+       * Populates a row once docs are created.
+       */
+      function updateTableRow(code, grade, urls) {
+        const btn = document.getElementById(`pkg_${grade}_${code}`);
+        if (btn) btn.disabled = false;
+        // Enable worksheet preview button
+        const wBtn = document.getElementById(`viewW_${grade}_${code}`);
+        if (wBtn) {
+          wBtn.disabled = false;
+          wBtn.onclick = () => window.open(urls.worksheetUrl, '_blank');
+        }
+        // Enable answer key preview button
+        const aBtn = document.getElementById(`viewA_${grade}_${code}`);
+        if (aBtn) {
+          aBtn.disabled = false;
+          aBtn.onclick = () => window.open(urls.answerKeyUrl, '_blank');
+        }
+        // Cache URLs for context menu actions
+        lessonUrls[`${grade}_${code}`] = urls;
+        // Display (and initialize) relative generated time
+        const genCell = document.querySelector(`#row_${grade}_${code} .generated-time`);
+        if (genCell) {
+          const then = urls.generatedTime ? new Date(urls.generatedTime) : new Date();
+          genCell.title = then.toLocaleString();
+          const diff = Math.floor((new Date() - then) / 1000);
+          let rel;
+          if (diff < 60)       rel = `${diff}s ago`;
+          else if (diff < 3600) rel = `${Math.floor(diff/60)}m ago`;
+          else if (diff < 86400)rel = `${Math.floor(diff/3600)}h ago`;
+          else                  rel = `${Math.floor(diff/86400)}d ago`;
+          genCell.textContent = rel;
+        }
+      }
+
+      /**
+       * Fires package generation for a single lesson.
+       * @param {string} code
+       * @param {string} grade
+       * @param {boolean} overwrite
+       */
+      function generatePackageForLesson(code, grade, overwrite = false) {
+        // Use passed grade if available, else fallback to bulkGrade/manual
+        let g = grade;
+        if (!g) {
+          let gradeInput = document.getElementById('bulkGrade');
+          if (!gradeInput) gradeInput = document.getElementById('grade');
+          g = gradeInput ? gradeInput.value : '';
+        }
+        const btn = document.getElementById(`pkg_${g}_${code}`);
+        const spin = document.getElementById('spin_pkg_' + code);
+        // Animate the button
+        if (btn) {
+          btn.classList.add('btn-pulsing');
+          btn.disabled = true;
+        }
+        if (spin) spin.style.display = 'block';
+        const originalText = btn ? btn.textContent : '';
+        google.script.run
+          .withSuccessHandler(url => {
+            if (spin) spin.style.display = 'none';
+            if (btn) {
+              btn.classList.remove('btn-pulsing');
+              btn.textContent = 'Done';
+              btn.disabled = false;
+              btn.onclick = () => window.open(url, '_blank');
+            }
+          })
+          .withFailureHandler(err => {
+            if (spin) spin.style.display = 'none';
+            if (btn) {
+              btn.classList.remove('btn-pulsing');
+              btn.disabled = false;
+              btn.textContent = originalText;
+            }
+            const msg = err.message || '';
+            // If backend asks overwrite confirmation, show modal
+            if (msg.includes('Overwrite?')) {
+              showReplaceModal(msg).then(choice => {
+                if (choice === 'replace') {
+                  // Retry with overwrite flag
+                  generatePackageForLesson(code, grade, true);
+                }
+                // If 'skip', do nothing
+              });
+            } else {
+              alert('Error packaging ' + code + ': ' + msg);
+            }
+          })
+          .generatePackageForLesson(g, code, overwrite);
+      }
+
+      /**
+       * Loops through all codes for selected grade, creates docs, and updates UI live, processing in domain batches and prompting between batches.
+       */
+      function bulkGenerateDocs() {
+        bulkCancelled = false;
+        stopBulkBtn.disabled = false;
+        stopBulkBtn.style.display = 'inline-flex';
+        document.getElementById('btnBulkDocs').disabled = true;
+        const grade = document.getElementById('bulkGrade').value;
+        if (!grade) return alert('Select a grade first.');
+        if (!bulkDomain.value) {
+          alert('Select a domain to generate.');
+          spinnerBulk.style.display = 'none';
+          document.getElementById('btnBulkDocs').disabled = false;
+          return;
+        }
+        // If a specific lesson is chosen, only generate that one
+        const singleCode = bulkLesson.value;
+        spinnerBulk.style.display = 'block';
+        // Get tbody from the existing table
+        const tbody = document.getElementById('bulkTableBody');
+        // Determine prefix and domain groups
+        const prefix = (grade >= 6 && grade <= 8) ? 'MS' : 'HS';
+        const allGroups = groupedCodes[prefix];
+        // Use single selected domain
+        const domainName = bulkDomain.value;
+        const domains = [domainName];
+        const domainGroups = allGroups;
+        // If lesson dropdown has a selection, override codes to just that one
+        const codesForDomain = domainGroups[domainName];
+        const codes = singleCode ? [singleCode] : codesForDomain;
+
+        // Finish helper
+        function finish() {
+          spinnerBulk.style.display = 'none';
+          stopBulkBtn.disabled = true;
+          stopBulkBtn.style.display = 'none';
+          document.getElementById('btnBulkDocs').disabled = false;
+        }
+
+        // Process one domain batch
+        function processDomain(domIndex) {
+          if (bulkCancelled || domIndex >= domains.length) {
+            finish();
+            return;
+          }
+          const domainName = domains[domIndex];
+          // Use narrowed codes array if singleCode, else all codes for domain
+          let codesArr = codes;
+          let i = 0;
+
+          function nextInBatch() {
+            if (bulkCancelled) {
+              finish();
+              return;
+            }
+            if (i >= codesArr.length) {
+              // Completed this batch—ask to continue
+              if (domIndex + 1 < domains.length) {
+                const cont = confirm(
+                  `Finished batch "${domainName}". Continue to next batch?`
+                );
+                if (cont) {
+                  processDomain(domIndex + 1);
+                } else {
+                  finish();
+                }
+              } else {
+                finish();
+              }
+              return;
+            }
+            const code = codesArr[i++];
+            // If this lesson is already in the table, ask whether to regenerate
+            if (lessonUrls[`${grade}_${code}`]) {
+              const shouldRegen = confirm(`Lesson ${code} is already generated. Regenerate it?`);
+              if (!shouldRegen) {
+                // Skip this code and continue with the next in batch
+                return nextInBatch();
+              } else {
+                // Delete existing resources before regenerating
+                google.script.run.deleteLessonResources(code);
+              }
+            }
+            // Always recreate the row to reset blinking state
+            const existingRow = document.getElementById(`row_${grade}_${code}`);
+            if (existingRow) {
+              existingRow.remove();
+            }
+            addTableRow(tbody, code, grade);
+            const rowEl = document.getElementById(`row_${grade}_${code}`);
+            tbody.insertBefore(rowEl, tbody.firstChild);
+            rowEl.classList.add('blinking');
+            // Fetch and update
+            google.script.run
+              .withSuccessHandler(urls => {
+                // Stop blinking and populate row
+                rowEl.classList.remove('blinking');
+                updateTableRow(code, grade, urls);
+                nextInBatch();
+              })
+              .withFailureHandler(err => {
+                // Stop blinking, show error and retry button
+                rowEl.classList.remove('blinking');
+                rowEl.innerHTML = `<td>${code}</td><td colspan="3" style="color:red;">Error: ${err.message}</td>
+                  <td class="menu-cell"><button class="btn-package" onclick="regenerateLesson('${code}', '${grade}')">Retry</button></td>`;
+                nextInBatch();
+              })
+              .generateDocsForOneLesson(grade, code);
+          }
+          nextInBatch();
+        }
+
+        // Start with first domain
+        processDomain(0);
+      }
+
+      function stopBulkGenerate() {
+        bulkCancelled = true;
+        stopBulkBtn.disabled = true;
+        spinnerBulk.style.display = 'none';
+        // Notify server to cancel in-flight operations
+        google.script.run.stopBulkGenerate();
+        alert('Bulk generation stopped.');
+      }
+
+      /**
+       * Loads all previously generated lessons, sorted newest first.
+       */
+      function loadPrevious() {
+        // Show placeholder table
+        showMainPlaceholder();
+        // Call server to get previous lesson codes and URLs
+        google.script.run
+          .withSuccessHandler(previousItems => {
+            // expected previousItems = [{ code, worksheetUrl, answerKeyUrl, generatedTime, grade }]
+            // Show all previously generated items
+            let recentItems = previousItems;
+            // Sort newest first
+            recentItems.sort((a, b) => new Date(b.generatedTime) - new Date(a.generatedTime));
+            // Always show table headers, even if no recent items
+            const container = bulkTableContainer;
+            container.innerHTML = `<table id="bulkTable"><thead><tr>
+              <th>Grade</th>
+              <th>Lesson</th>
+              <th>Worksheet</th>
+              <th>Answer Key</th>
+              <th>Last Edit</th>
+              <th>Package</th>
+              <th class="menu-cell"></th>
+            </tr></thead><tbody id="bulkTableBody"></tbody></table>`;
+            const tbody = document.getElementById('bulkTableBody');
+            // Populate rows if any
+            recentItems.forEach(item => {
+              addTableRow(tbody, item.code, item.grade);
+              updateTableRow(item.code, item.grade, {
+                worksheetUrl: item.worksheetUrl,
+                answerKeyUrl: item.answerKeyUrl,
+                generatedTime: item.generatedTime
+              });
+            });
+          })
+          .withFailureHandler(err => {
+            alert('Error loading previous: ' + err.message);
+          })
+          .listPreviouslyGenerated();
+      }
+      /**
+       * Opens the context menu for preview actions at the given button.
+       */
+      // (showContextMenuFor left unchanged as not used elsewhere)
+
+      /**
+       * Deletes all resources related to a lesson code.
+       */
+      function deleteLesson(code, grade) {
+        if (!confirm(`Delete all items for lesson ${code}?`)) return;
+        // Try to get grade if not provided
+        let g = grade;
+        if (!g) {
+          // Try to infer from DOM
+          const row = document.querySelector(`[id^="row_"][id$="_${code}"]`);
+          if (row) {
+            g = row.id.split('_')[1];
+          }
+        }
+        google.script.run
+          .withSuccessHandler(() => {
+            // Remove the row from the table
+            const row = document.getElementById(`row_${g}_${code}`);
+            if (row) row.remove();
+          })
+          .withFailureHandler(err => {
+            alert('Error deleting ' + code + ': ' + err.message);
+          })
+          .deleteLessonResources(code);
+      }
+
+      /**
+       * Deletes and rebuilds a single lesson’s docs.
+       * First deletes all resources, then recreates docs, and manages blinking animation.
+       */
+      function regenerateLesson(code, grade) {
+        if (!confirm(`Regenerate lesson ${code}? This will delete existing files and recreate.`)) {
+          return;
+        }
+        let g = grade;
+        if (!g) {
+          // Try to infer from DOM
+          const row = document.querySelector(`[id^="row_"][id$="_${code}"]`);
+          if (row) {
+            g = row.id.split('_')[1];
+          } else {
+            // fallback to bulkGrade/grade
+            const gradeInput = document.getElementById('bulkGrade') || document.getElementById('grade');
+            g = gradeInput ? gradeInput.value : '';
+          }
+        }
+        const rowEl = document.getElementById(`row_${g}_${code}`);
+        if (rowEl) {
+          rowEl.classList.add('blinking');
+        }
+        // Step 1: delete existing lesson resources
+        google.script.run
+          .withSuccessHandler(() => {
+            // Step 2: generate new docs for this lesson
+            google.script.run
+              .withSuccessHandler(urls => {
+                // Update UI with new URLs and stop blinking
+                if (rowEl) rowEl.classList.remove('blinking');
+                updateTableRow(code, g, urls);
+              })
+              .withFailureHandler(err => {
+                if (rowEl) rowEl.classList.remove('blinking');
+                alert('Error recreating ' + code + ': ' + err.message);
+              })
+              .generateDocsForOneLesson(g, code);
+          })
+          .withFailureHandler(err => {
+            if (rowEl) rowEl.classList.remove('blinking');
+            alert('Error deleting ' + code + ': ' + err.message);
+          })
+          .deleteLessonResources(code);
+      }
+
+      /**
+       * Handles action dropdown changes for a lesson row.
+       */
+      function handleActionChange(code, action) {
+        const spinner = document.getElementById('spin_action_' + code);
+        const select = document.getElementById('action_' + code);
+        select.disabled = true;
+        spinner.style.display = 'block';
+        const finish = () => {
+          spinner.style.display = 'none';
+          select.value = '';
+          select.disabled = false;
+        };
+        if (action === 'regenerate') {
+          google.script.run
+            .withSuccessHandler(() => finish())
+            .withFailureHandler(err => { finish(); alert('Error regenerating ' + code + ': ' + err.message); })
+            .regenerateLessonResources(code);
+        } else if (action === 'delete') {
+          google.script.run
+            .withSuccessHandler(() => {
+              finish();
+              const row = document.getElementById('row_' + code);
+              if (row) row.remove();
+            })
+            .withFailureHandler(err => { finish(); alert('Error deleting ' + code + ': ' + err.message); })
+            .deleteLessonResources(code);
+        } else {
+          finish();
+        }
+      }
+
+      // (Manual/bulk tab functions removed)
+
+      // Context menu logic
+      const contextMenu = document.getElementById('contextMenu');
+      let contextCode = null;
+      // Reference to card element for relative positioning
+      const card = document.querySelector('.card');
+
+      // Hide menu on any click
+      document.addEventListener('click', () => {
+        contextMenu.style.display = 'none';
+        // reset all items to visible when menu is next opened
+        Array.from(contextMenu.children).forEach(item => {
+          item.style.display = 'block';
+        });
+      });
+
+      // Show context menu on 3‑dots button click
+      document.addEventListener('click', e => {
+        if (e.target.matches('.menu-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const row = e.target.closest('tr');
+          contextCode = row.id.replace('row_','');
+          const rect = e.target.getBoundingClientRect();
+          const cardRect = card.getBoundingClientRect();
+          // Compute position relative to card
+          const top = rect.bottom - cardRect.top;
+          const left = rect.left - cardRect.left;
+          contextMenu.style.top = top + 'px';
+          contextMenu.style.left = left + 'px';
+          contextMenu.style.display = 'block';
+        } else {
+          // click elsewhere hides menu
+          contextMenu.style.display = 'none';
+        }
+      });
+
+      // Show custom menu on right-click of a row
+      document.addEventListener('contextmenu', (e) => {
+        const tr = e.target.closest('tr');
+        if (tr && tr.id && tr.id.startsWith('row_')) {
+          e.preventDefault();
+          contextCode = tr.id.replace('row_','');
+          const cardRect2 = card.getBoundingClientRect();
+          // Compute relative to card
+          const top2 = e.clientY - cardRect2.top;
+          const left2 = e.clientX - cardRect2.left;
+          contextMenu.style.top = top2 + 'px';
+          contextMenu.style.left = left2 + 'px';
+          contextMenu.style.display = 'block';
+        }
+      });
+
+      // Handle menu item clicks
+      contextMenu.addEventListener('click', (e) => {
+        const action = e.target.dataset.action;
+        if (action && contextCode) {
+          // contextCode is now expected to be grade_code, but may be just code
+          let code = contextCode;
+          let grade = undefined;
+          if (contextCode.includes('_')) {
+            // Try to split grade and code
+            const idx = contextCode.indexOf('_');
+            grade = contextCode.substring(0, idx);
+            code = contextCode.substring(idx + 1);
+          }
+          const urls = lessonUrls[`${grade}_${code}`] || lessonUrls[contextCode] || {};
+          switch (action) {
+            case 'viewWorksheet':
+              if (urls.worksheetUrl) window.open(urls.worksheetUrl, '_blank');
+              break;
+            case 'viewAnswerKey':
+              if (urls.answerKeyUrl) window.open(urls.answerKeyUrl, '_blank');
+              break;
+            case 'generatePackage':
+              generatePackageForLesson(code, grade);
+              break;
+            case 'regenerateLesson':
+              regenerateLesson(code, grade);
+              break;
+            case 'deleteLesson':
+              deleteLesson(code, grade);
+              break;
+            default:
+              break;
+          }
+        }
+        contextMenu.style.display = 'none';
+      });
+      // Removed all history popup and related logic
+    // On page load, show the recent lessons table immediately
+    loadPrevious();
+    // Live update relative “x ago” for generated-time cells
+    setInterval(() => {
+      document.querySelectorAll('.generated-time').forEach(cell => {
+        const ts = cell.title;
+        if (!ts) return;
+        const then = new Date(ts);
+        const now = new Date();
+        const diff = Math.floor((now - then) / 1000);
+        let rel;
+        if (diff < 60) rel = `${diff}s ago`;
+        else if (diff < 3600) rel = `${Math.floor(diff/60)}m ago`;
+        else if (diff < 86400) rel = `${Math.floor(diff/3600)}h ago`;
+        else rel = `${Math.floor(diff/86400)}d ago`;
+        cell.textContent = rel;
+      });
+    }, 1000);
+    </script>
+  </body>
+</html>
