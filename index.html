@@ -366,6 +366,7 @@
 
     <script>
       // Replace/Skip modal controls
+      const API_URL = 'https://script.google.com/macros/s/YOUR_WEB_APP_ID/exec';
       const lessonUrls = {};
       const replaceModal     = document.getElementById('replaceModal');
       const modalMessage     = document.getElementById('modalMessage');
@@ -581,38 +582,45 @@
         }
         if (spin) spin.style.display = 'block';
         const originalText = btn ? btn.textContent : '';
-        google.script.run
-          .withSuccessHandler(url => {
-            if (spin) spin.style.display = 'none';
-            if (btn) {
-              btn.classList.remove('btn-pulsing');
-              btn.textContent = 'Done';
-              btn.disabled = false;
-              btn.onclick = () => window.open(url, '_blank');
+        fetch(`${API_URL}?action=package&grade=${g}&code=${code}&overwrite=${overwrite}`)
+          .then(r => r.json())
+          .then(json => {
+            if (json.success) {
+              if (spin) spin.style.display = 'none';
+              if (btn) {
+                btn.classList.remove('btn-pulsing');
+                btn.textContent = 'Done';
+                btn.disabled = false;
+                btn.onclick = () => window.open(json.data.packageUrl, '_blank');
+              }
+            } else {
+              if (spin) spin.style.display = 'none';
+              if (btn) {
+                btn.classList.remove('btn-pulsing');
+                btn.disabled = false;
+                btn.textContent = originalText;
+              }
+              const msg = json.error || '';
+              if (msg.includes('Overwrite?')) {
+                showReplaceModal(msg).then(choice => {
+                  if (choice === 'replace') {
+                    generatePackageForLesson(code, grade, true);
+                  }
+                });
+              } else {
+                alert('Error packaging ' + code + ': ' + msg);
+              }
             }
           })
-          .withFailureHandler(err => {
+          .catch(err => {
             if (spin) spin.style.display = 'none';
             if (btn) {
               btn.classList.remove('btn-pulsing');
               btn.disabled = false;
               btn.textContent = originalText;
             }
-            const msg = err.message || '';
-            // If backend asks overwrite confirmation, show modal
-            if (msg.includes('Overwrite?')) {
-              showReplaceModal(msg).then(choice => {
-                if (choice === 'replace') {
-                  // Retry with overwrite flag
-                  generatePackageForLesson(code, grade, true);
-                }
-                // If 'skip', do nothing
-              });
-            } else {
-              alert('Error packaging ' + code + ': ' + msg);
-            }
-          })
-          .generatePackageForLesson(g, code, overwrite);
+            alert('Network error: ' + err.message);
+          });
       }
 
       /**
