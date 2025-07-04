@@ -603,6 +603,7 @@
           .then(r => r.json())
           .then(json => {
             if (json.success) {
+              window.open(json.data.packageUrl, '_blank');
               if (spin) spin.style.display = 'none';
               if (btn) {
                 btn.classList.remove('btn-pulsing');
