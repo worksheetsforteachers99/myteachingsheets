@@ -803,7 +803,7 @@
       /**
        * Deletes all resources related to a lesson code.
        */
-      function deleteLesson(code, grade) {
+      async function deleteLesson(code, grade) {
         if (!confirm(`Delete all items for lesson ${code}?`)) return;
         // Try to get grade if not provided
         let g = grade;
@@ -814,16 +814,13 @@
             g = row.id.split('_')[1];
           }
         }
-        google.script.run
-          .withSuccessHandler(() => {
-            // Remove the row from the table
-            const row = document.getElementById(`row_${g}_${code}`);
-            if (row) row.remove();
-          })
-          .withFailureHandler(err => {
-            alert('Error deleting ' + code + ': ' + err.message);
-          })
-          .deleteLessonResources(code);
+        try {
+          await callApi('deleteLessonResources', { code });
+          const row = document.getElementById(`row_${g}_${code}`);
+          if (row) row.remove();
+        } catch (err) {
+          alert('Error deleting ' + code + ': ' + err.message);
+        }
       }
 
       /**
