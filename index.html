@@ -591,13 +591,13 @@
           g = gradeInput ? gradeInput.value : '';
         }
         const btn = document.getElementById(`pkg_${g}_${code}`);
-        const spin = document.getElementById('spin_pkg_' + code);
+        // const spin = document.getElementById('spin_pkg_' + code); // Spinner removed
         // Animate the button
         if (btn) {
           btn.classList.add('btn-pulsing');
           btn.disabled = true;
         }
-        if (spin) spin.style.display = 'block';
+        // if (spin) spin.style.display = 'block'; // Spinner display removed
         const originalText = btn ? btn.textContent : '';
         fetch(`${API_URL}?action=package&grade=${g}&code=${code}&overwrite=${overwrite}`)
           .then(r => r.json())
@@ -609,7 +609,7 @@
                 ? json.data
                 : json.data.packageUrl;
 
-              if (spin) spin.style.display = 'none';
+              // if (spin) spin.style.display = 'none'; // Spinner display removed
               if (btn) {
                 btn.classList.remove('btn-pulsing');
                 btn.textContent = 'Open';
@@ -617,7 +617,7 @@
                 btn.onclick = () => window.open(packageUrl, '_blank');
               }
             } else {
-              if (spin) spin.style.display = 'none';
+              // if (spin) spin.style.display = 'none'; // Spinner display removed
               if (btn) {
                 btn.classList.remove('btn-pulsing');
                 btn.disabled = false;
@@ -636,7 +636,7 @@
             }
           })
           .catch(err => {
-            if (spin) spin.style.display = 'none';
+            // if (spin) spin.style.display = 'none'; // Spinner display removed
             if (btn) {
               btn.classList.remove('btn-pulsing');
               btn.disabled = false;
