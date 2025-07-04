@@ -691,7 +691,7 @@
           let codesArr = codes;
           let i = 0;
 
-          function nextInBatch() {
+          async function nextInBatch() {
             if (bulkCancelled) {
               finish();
               return;
@@ -719,10 +719,8 @@
               if (!shouldRegen) {
                 // Skip this code and continue with the next in batch
                 return nextInBatch();
-              } else {
-                // Delete existing resources before regenerating
-                google.script.run.deleteLessonResources(code);
               }
+              await callApi('deleteLessonResources', { code });
             }
             // Always recreate the row to reset blinking state
             const existingRow = document.getElementById(`row_${grade}_${code}`);
@@ -734,21 +732,17 @@
             tbody.insertBefore(rowEl, tbody.firstChild);
             rowEl.classList.add('blinking');
             // Fetch and update
-            google.script.run
-              .withSuccessHandler(urls => {
-                // Stop blinking and populate row
-                rowEl.classList.remove('blinking');
-                updateTableRow(code, grade, urls);
-                nextInBatch();
-              })
-              .withFailureHandler(err => {
-                // Stop blinking, show error and retry button
-                rowEl.classList.remove('blinking');
-                rowEl.innerHTML = `<td>${code}</td><td colspan="3" style="color:red;">Error: ${err.message}</td>
-                  <td class="menu-cell"><button class="btn-package" onclick="regenerateLesson('${code}', '${grade}')">Retry</button></td>`;
-                nextInBatch();
-              })
-              .generateDocsForOneLesson(grade, code);
+            try {
+              const urls = await callApi('generateDocsForOneLesson', { grade: grade, code: code });
+              rowEl.classList.remove('blinking');
+              updateTableRow(code, grade, urls);
+              nextInBatch();
+            } catch (err) {
+              rowEl.classList.remove('blinking');
+              rowEl.innerHTML = `<td>${code}</td><td colspan="3" style="color:red;">Error: ${err.message}</td>
+                <td class="menu-cell"><button class="btn-package" onclick="regenerateLesson('${code}', '${grade}')">Retry</button></td>`;
+              nextInBatch();
+            }
           }
           nextInBatch();
         }
@@ -836,7 +830,7 @@
        * Deletes and rebuilds a single lesson’s docs.
        * First deletes all resources, then recreates docs, and manages blinking animation.
        */
-      function regenerateLesson(code, grade) {
+      async function regenerateLesson(code, grade) {
         if (!confirm(`Regenerate lesson ${code}? This will delete existing files and recreate.`)) {
           return;
         }
@@ -856,27 +850,15 @@
         if (rowEl) {
           rowEl.classList.add('blinking');
         }
-        // Step 1: delete existing lesson resources
-        google.script.run
-          .withSuccessHandler(() => {
-            // Step 2: generate new docs for this lesson
-            google.script.run
-              .withSuccessHandler(urls => {
-                // Update UI with new URLs and stop blinking
-                if (rowEl) rowEl.classList.remove('blinking');
-                updateTableRow(code, g, urls);
-              })
-              .withFailureHandler(err => {
-                if (rowEl) rowEl.classList.remove('blinking');
-                alert('Error recreating ' + code + ': ' + err.message);
-              })
-              .generateDocsForOneLesson(g, code);
-          })
-          .withFailureHandler(err => {
-            if (rowEl) rowEl.classList.remove('blinking');
-            alert('Error deleting ' + code + ': ' + err.message);
-          })
-          .deleteLessonResources(code);
+        try {
+          await callApi('deleteLessonResources', { code });
+          const urls = await callApi('generateDocsForOneLesson', { grade: g, code: code });
+          if (rowEl) rowEl.classList.remove('blinking');
+          updateTableRow(code, g, urls);
+        } catch (err) {
+          if (rowEl) rowEl.classList.remove('blinking');
+          alert('Error recreating ' + code + ': ' + err.message);
+        }
       }
 
       /**
@@ -893,19 +875,17 @@
           select.disabled = false;
         };
         if (action === 'regenerate') {
-          google.script.run
-            .withSuccessHandler(() => finish())
-            .withFailureHandler(err => { finish(); alert('Error regenerating ' + code + ': ' + err.message); })
-            .regenerateLessonResources(code);
+          callApi('regenerateLessonResources', { code })
+            .then(() => finish())
+            .catch(err => { finish(); alert('Error regenerating ' + code + ': ' + err.message); });
         } else if (action === 'delete') {
-          google.script.run
-            .withSuccessHandler(() => {
+          callApi('deleteLessonResources', { code })
+            .then(() => {
               finish();
               const row = document.getElementById('row_' + code);
               if (row) row.remove();
             })
-            .withFailureHandler(err => { finish(); alert('Error deleting ' + code + ': ' + err.message); })
-            .deleteLessonResources(code);
+            .catch(err => { finish(); alert('Error deleting ' + code + ': ' + err.message); });
         } else {
           finish();
         }
