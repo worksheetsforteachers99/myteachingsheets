@@ -294,13 +294,8 @@
         background: #f0f0f0; /* or var(--bg) */
       }
     </style>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
-    <div id="loginDiv" style="display:grid;place-items:center;height:100vh;">
-      <div id="g_id_signin"></div>
-    </div>
-    <div id="appDiv" style="display:none;">
     <div class="card">
       <h2>Worksheet Generator</h2>
       <div id="bulkSection">
@@ -356,7 +351,6 @@
         </div>
       </div>
     </div>
-    </div>
 
     <!-- Replace/Skip Modal -->
     <div id="replaceModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:10;">
@@ -371,23 +365,6 @@
     <!-- Removed historyPopup container -->
 
     <script>
-      let idToken;
-      window.onload = () => {
-        google.accounts.id.initialize({
-          client_id: '285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com',
-          callback: handleCredentialResponse
-        });
-        google.accounts.id.renderButton(
-          document.getElementById('g_id_signin'),
-          { theme: 'outline', size: 'large' }
-        );
-      };
-      function handleCredentialResponse(response) {
-        idToken = response.credential;
-        document.getElementById('loginDiv').style.display = 'none';
-        document.getElementById('appDiv').style.display = 'block';
-        loadPrevious();
-      }
       // Replace/Skip modal controls
       const API_URL = 'https://script.google.com/macros/s/AKfycbwRPsqP7o04EEOjKNygILkqemp1WgCz2itpvk-Kj9Kvdk8D0YQNrpmIXsOmZZkFaaR_4A/exec';
       /**
@@ -397,36 +374,15 @@
        * @returns {Promise<object>}
        */
       function callApi(action, params = {}) {
-        return new Promise((resolve, reject) => {
-          if (!idToken) {
-            reject(new Error('User not signed in'));
-            return;
-          }
-          // Generate a unique callback name
-          const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-          // Define the global callback
-          window[cbName] = (response) => {
-            delete window[cbName];
-            document.head.removeChild(script);
-            if (response.success) resolve(response.data);
-            else reject(new Error(response.error || 'API error'));
-          };
-          // Build URL with JSONP callback
-          const url = new URL(API_URL);
-          url.searchParams.set('action', action);
-          url.searchParams.set('id_token', idToken);
-          Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-          url.searchParams.set('callback', cbName);
-          // Create script tag
-          const script = document.createElement('script');
-          script.src = url.toString();
-          script.onerror = () => {
-            delete window[cbName];
-            document.head.removeChild(script);
-            reject(new Error('Network error'));
-          };
-          document.head.appendChild(script);
-        });
+        const url = new URL(API_URL);
+        url.searchParams.set('action', action);
+        Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+        return fetch(url)
+          .then(r => r.json())
+          .then(json => {
+            if (!json.success) throw new Error(json.error || 'Unknown API error');
+            return json.data;
+          });
       }
       const lessonUrls = {};
       const replaceModal     = document.getElementById('replaceModal');
@@ -635,34 +591,53 @@
           g = gradeInput ? gradeInput.value : '';
         }
         const btn = document.getElementById(`pkg_${g}_${code}`);
+        const spin = document.getElementById('spin_pkg_' + code);
         // Animate the button
         if (btn) {
           btn.classList.add('btn-pulsing');
           btn.disabled = true;
         }
+        if (spin) spin.style.display = 'block';
         const originalText = btn ? btn.textContent : '';
-        callApi('package', { grade: g, code: code, overwrite: overwrite })
-          .then(data => {
-            const packageUrl = typeof data === 'string' ? data : data.packageUrl;
-            btn.classList.remove('btn-pulsing');
-            btn.textContent = 'Open';
-            btn.disabled = false;
-            btn.onclick = () => window.open(packageUrl, '_blank');
+        fetch(`${API_URL}?action=package&grade=${g}&code=${code}&overwrite=${overwrite}`)
+          .then(r => r.json())
+          .then(json => {
+            if (json.success) {
+              window.open(json.data.packageUrl, '_blank');
+              if (spin) spin.style.display = 'none';
+              if (btn) {
+                btn.classList.remove('btn-pulsing');
+                btn.textContent = 'Done';
+                btn.disabled = false;
+                btn.onclick = () => window.open(json.data.packageUrl, '_blank');
+              }
+            } else {
+              if (spin) spin.style.display = 'none';
+              if (btn) {
+                btn.classList.remove('btn-pulsing');
+                btn.disabled = false;
+                btn.textContent = originalText;
+              }
+              const msg = json.error || '';
+              if (msg.includes('Overwrite?')) {
+                showReplaceModal(msg).then(choice => {
+                  if (choice === 'replace') {
+                    generatePackageForLesson(code, grade, true);
+                  }
+                });
+              } else {
+                alert('Error packaging ' + code + ': ' + msg);
+              }
+            }
           })
           .catch(err => {
-            btn.classList.remove('btn-pulsing');
-            btn.disabled = false;
-            btn.textContent = originalText;
-            const msg = err.message;
-            if (msg.includes('Overwrite?')) {
-              showReplaceModal(msg).then(choice => {
-                if (choice === 'replace') {
-                  generatePackageForLesson(code, grade, true);
-                }
-              });
-            } else {
-              alert('Error packaging ' + code + ': ' + msg);
+            if (spin) spin.style.display = 'none';
+            if (btn) {
+              btn.classList.remove('btn-pulsing');
+              btn.disabled = false;
+              btn.textContent = originalText;
             }
+            alert('Network error: ' + err.message);
           });
       }
 
