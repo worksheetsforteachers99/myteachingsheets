@@ -294,19 +294,10 @@
         background: #f0f0f0; /* or var(--bg) */
       }
     </style>
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <div class="card">
       <h2>Worksheet Generator</h2>
-      <!-- Sign‑in & copy controls -->
-      <div id="authSection" style="margin-bottom:1.5em; text-align:center;">
-        <div id="gsi-btn"></div>
-        <button id="copyBtn" class="btn-form" disabled style="margin-top:0.75em;">
-          Copy Latest Package to My&nbsp;Drive
-        </button>
-      </div>
       <div id="bulkSection">
         <div class="form-group">
           <label for="bulkGrade">Grade Level</label>
@@ -376,10 +367,6 @@
     <script>
       // Replace/Skip modal controls
       const API_URL = 'https://script.google.com/macros/s/AKfycbwRPsqP7o04EEOjKNygILkqemp1WgCz2itpvk-Kj9Kvdk8D0YQNrpmIXsOmZZkFaaR_4A/exec';
-      // Google OAuth client ID (replace with your own)
-      const CLIENT_ID = '285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com';
-      let accessToken = '';
-      let tokenClient;
       /**
        * Call the Apps Script JSON API.
        * @param {string} action
@@ -604,63 +591,28 @@
           g = gradeInput ? gradeInput.value : '';
         }
         const btn = document.getElementById(`pkg_${g}_${code}`);
-        // const spin = document.getElementById('spin_pkg_' + code); // Spinner removed
+        const spin = document.getElementById('spin_pkg_' + code);
         // Animate the button
         if (btn) {
           btn.classList.add('btn-pulsing');
           btn.disabled = true;
         }
-        // if (spin) spin.style.display = 'block'; // Spinner display removed
+        if (spin) spin.style.display = 'block';
         const originalText = btn ? btn.textContent : '';
         fetch(`${API_URL}?action=package&grade=${g}&code=${code}&overwrite=${overwrite}`)
           .then(r => r.json())
           .then(json => {
             if (json.success) {
-              // The server currently returns the URL directly as a string.
-              // Support both formats just in case.
-              const packageUrl = typeof json.data === 'string'
-                ? json.data
-                : json.data.packageUrl;
-
-              // Store the folder ID globally so “Copy to My Drive” knows what to copy
-              window.LATEST_PACKAGE_FOLDER_ID = (packageUrl.match(/[-\w]{25,}/) || [])[0];
-
-              // if (spin) spin.style.display = 'none'; // Spinner display removed
+              window.open(json.data.packageUrl, '_blank');
+              if (spin) spin.style.display = 'none';
               if (btn) {
                 btn.classList.remove('btn-pulsing');
-                btn.textContent = 'Add to Drive';
+                btn.textContent = 'Done';
                 btn.disabled = false;
-                btn.onclick = () => {
-                  // Request token if needed
-                  if (!accessToken) {
-                    tokenClient.requestAccessToken();
-                    return;
-                  }
-                  // Copy folder into user's Drive
-                  fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': 'Bearer ' + accessToken
-                    },
-                    body: JSON.stringify({
-                      action: 'copyToUser',
-                      folderId: window.LATEST_PACKAGE_FOLDER_ID
-                    })
-                  })
-                  .then(r => r.json())
-                  .then(j => {
-                    if (j.success) {
-                      alert('Folder copied to your Drive!');
-                    } else {
-                      alert('Copy failed: ' + (j.error || 'Unknown'));
-                    }
-                  })
-                  .catch(err => alert('Network error: ' + err.message));
-                };
+                btn.onclick = () => window.open(json.data.packageUrl, '_blank');
               }
             } else {
-              // if (spin) spin.style.display = 'none'; // Spinner display removed
+              if (spin) spin.style.display = 'none';
               if (btn) {
                 btn.classList.remove('btn-pulsing');
                 btn.disabled = false;
@@ -679,7 +631,7 @@
             }
           })
           .catch(err => {
-            // if (spin) spin.style.display = 'none'; // Spinner display removed
+            if (spin) spin.style.display = 'none';
             if (btn) {
               btn.classList.remove('btn-pulsing');
               btn.disabled = false;
@@ -1046,54 +998,6 @@
         cell.textContent = rel;
       });
     }, 1000);
-      // ---------- Google Identity Services ----------
-      window.addEventListener('DOMContentLoaded', () => {
-        // Render the Sign‑in button
-        google.accounts.id.initialize({ client_id: CLIENT_ID });
-        google.accounts.id.renderButton(
-          document.getElementById('gsi-btn'),
-          { theme: 'outline', size: 'large' }
-        );
-
-        // Token client for Drive‑scoped access
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID,
-          scope: 'https://www.googleapis.com/auth/drive',
-          callback: (resp) => {
-            accessToken = resp.access_token;
-            document.getElementById('copyBtn').disabled = false;
-          }
-        });
-
-        // Click handler for “Copy to My Drive”
-        document.getElementById('copyBtn').addEventListener('click', () => {
-          if (!accessToken) return tokenClient.requestAccessToken();
-          if (!window.LATEST_PACKAGE_FOLDER_ID) {
-            alert('Generate a package first.');
-            return;
-          }
-          fetch(API_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + accessToken
-            },
-            body: JSON.stringify({
-              action: 'copyToUser',
-              folderId: window.LATEST_PACKAGE_FOLDER_ID
-            })
-          })
-          .then(r => r.json())
-          .then(j => {
-            if (j.success) {
-              window.open(j.data.newFolderUrl, '_blank');
-            } else {
-              alert('Copy failed: ' + (j.error || 'Unknown error'));
-            }
-          })
-          .catch(err => alert('Network error: ' + err.message));
-        });
-      });
     </script>
   </body>
 </html>
