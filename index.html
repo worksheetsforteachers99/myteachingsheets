@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Worksheet Generator</title>
     <style>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
       :root {
         --brand: #005f73;
         --brand-dark: #003d4d;
@@ -298,6 +300,12 @@
   <body>
     <div class="card">
       <h2>Worksheet Generator</h2>
+      <div style="text-align:center; margin-bottom:1em;">
+        <div id="gsi-button"></div>
+        <button id="copyBtn" disabled style="margin-top:0.5em; padding:0.5em 1em; font-size:1em;">
+          Copy Latest Package to My Drive
+        </button>
+      </div>
       <div id="bulkSection">
         <div class="form-group">
           <label for="bulkGrade">Grade Level</label>
@@ -365,8 +373,59 @@
     <!-- Removed historyPopup container -->
 
     <script>
-      // Replace/Skip modal controls
+      // --- Google Sign-In & Drive Token Client ---
+      const CLIENT_ID = '285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com';
       const API_URL = 'https://script.google.com/macros/s/AKfycbwRPsqP7o04EEOjKNygILkqemp1WgCz2itpvk-Kj9Kvdk8D0YQNrpmIXsOmZZkFaaR_4A/exec';
+
+      let userAccessToken = '';
+      // Token client for Drive scope
+      const tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/drive',
+        callback: (tokRes) => {
+          userAccessToken = tokRes.access_token;
+          document.getElementById('copyBtn').disabled = false;
+        }
+      });
+      // Render the Google Sign-In button
+      google.accounts.id.initialize({ client_id: CLIENT_ID });
+      google.accounts.id.renderButton(
+        document.getElementById('gsi-button'),
+        { theme: 'outline', size: 'large' }
+      );
+      google.accounts.id.prompt(); // display prompt if appropriate
+
+      // Copy button handler
+      document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('copyBtn').addEventListener('click', async () => {
+          if (!userAccessToken) {
+            tokenClient.requestAccessToken();
+            return;
+          }
+          // Replace with your mechanism for obtaining the latest package folder ID
+          const folderId = window.LATEST_PACKAGE_FOLDER_ID;
+          try {
+            const res = await fetch(API_URL, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + userAccessToken
+              },
+              body: JSON.stringify({ action: 'copyToUser', folderId })
+            });
+            const json = await res.json();
+            if (json.success) {
+              window.open(json.data.newFolderUrl, '_blank');
+            } else {
+              alert('Copy failed: ' + json.error);
+            }
+          } catch (err) {
+            alert('Network error: ' + err.message);
+          }
+        });
+      });
+
+      // Replace/Skip modal controls
       /**
        * Call the Apps Script JSON API.
        * @param {string} action
