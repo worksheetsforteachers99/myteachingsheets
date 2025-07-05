@@ -379,6 +379,7 @@
       // Google OAuth client ID (replace with your own)
       const CLIENT_ID = '285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com';
       let accessToken = '';
+      let tokenClient;
       /**
        * Call the Apps Script JSON API.
        * @param {string} action
@@ -627,9 +628,36 @@
               // if (spin) spin.style.display = 'none'; // Spinner display removed
               if (btn) {
                 btn.classList.remove('btn-pulsing');
-                btn.textContent = 'Open';
+                btn.textContent = 'Add to Drive';
                 btn.disabled = false;
-                btn.onclick = () => window.open(packageUrl, '_blank');
+                btn.onclick = () => {
+                  // Request token if needed
+                  if (!accessToken) {
+                    tokenClient.requestAccessToken();
+                    return;
+                  }
+                  // Copy folder into user's Drive
+                  fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': 'Bearer ' + accessToken
+                    },
+                    body: JSON.stringify({
+                      action: 'copyToUser',
+                      folderId: window.LATEST_PACKAGE_FOLDER_ID
+                    })
+                  })
+                  .then(r => r.json())
+                  .then(j => {
+                    if (j.success) {
+                      alert('Folder copied to your Drive!');
+                    } else {
+                      alert('Copy failed: ' + (j.error || 'Unknown'));
+                    }
+                  })
+                  .catch(err => alert('Network error: ' + err.message));
+                };
               }
             } else {
               // if (spin) spin.style.display = 'none'; // Spinner display removed
@@ -1028,7 +1056,7 @@
         );
 
         // Token client for Drive‑scoped access
-        const tokenClient = google.accounts.oauth2.initTokenClient({
+        tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: 'https://www.googleapis.com/auth/drive',
           callback: (resp) => {
