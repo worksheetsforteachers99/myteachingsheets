@@ -397,17 +397,36 @@
        * @returns {Promise<object>}
        */
       function callApi(action, params = {}) {
-        const url = new URL(API_URL);
-        url.searchParams.set('action', action);
-        if (!idToken) throw new Error('User not signed in');
-        url.searchParams.set('id_token', idToken);
-        Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-        return fetch(url)
-          .then(r => r.json())
-          .then(json => {
-            if (!json.success) throw new Error(json.error || 'Unknown API error');
-            return json.data;
-          });
+        return new Promise((resolve, reject) => {
+          if (!idToken) {
+            reject(new Error('User not signed in'));
+            return;
+          }
+          // Generate a unique callback name
+          const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+          // Define the global callback
+          window[cbName] = (response) => {
+            delete window[cbName];
+            document.head.removeChild(script);
+            if (response.success) resolve(response.data);
+            else reject(new Error(response.error || 'API error'));
+          };
+          // Build URL with JSONP callback
+          const url = new URL(API_URL);
+          url.searchParams.set('action', action);
+          url.searchParams.set('id_token', idToken);
+          Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+          url.searchParams.set('callback', cbName);
+          // Create script tag
+          const script = document.createElement('script');
+          script.src = url.toString();
+          script.onerror = () => {
+            delete window[cbName];
+            document.head.removeChild(script);
+            reject(new Error('Network error'));
+          };
+          document.head.appendChild(script);
+        });
       }
       const lessonUrls = {};
       const replaceModal     = document.getElementById('replaceModal');
@@ -616,58 +635,34 @@
           g = gradeInput ? gradeInput.value : '';
         }
         const btn = document.getElementById(`pkg_${g}_${code}`);
-        // const spin = document.getElementById('spin_pkg_' + code); // Spinner removed
         // Animate the button
         if (btn) {
           btn.classList.add('btn-pulsing');
           btn.disabled = true;
         }
-        // if (spin) spin.style.display = 'block'; // Spinner display removed
         const originalText = btn ? btn.textContent : '';
-        fetch(`${API_URL}?action=package&grade=${g}&code=${code}&overwrite=${overwrite}`)
-          .then(r => r.json())
-          .then(json => {
-            if (json.success) {
-              // The server currently returns the URL directly as a string.
-              // Support both formats just in case.
-              const packageUrl = typeof json.data === 'string'
-                ? json.data
-                : json.data.packageUrl;
-
-              // if (spin) spin.style.display = 'none'; // Spinner display removed
-              if (btn) {
-                btn.classList.remove('btn-pulsing');
-                btn.textContent = 'Open';
-                btn.disabled = false;
-                btn.onclick = () => window.open(packageUrl, '_blank');
-              }
-            } else {
-              // if (spin) spin.style.display = 'none'; // Spinner display removed
-              if (btn) {
-                btn.classList.remove('btn-pulsing');
-                btn.disabled = false;
-                btn.textContent = originalText;
-              }
-              const msg = json.error || '';
-              if (msg.includes('Overwrite?')) {
-                showReplaceModal(msg).then(choice => {
-                  if (choice === 'replace') {
-                    generatePackageForLesson(code, grade, true);
-                  }
-                });
-              } else {
-                alert('Error packaging ' + code + ': ' + msg);
-              }
-            }
+        callApi('package', { grade: g, code: code, overwrite: overwrite })
+          .then(data => {
+            const packageUrl = typeof data === 'string' ? data : data.packageUrl;
+            btn.classList.remove('btn-pulsing');
+            btn.textContent = 'Open';
+            btn.disabled = false;
+            btn.onclick = () => window.open(packageUrl, '_blank');
           })
           .catch(err => {
-            // if (spin) spin.style.display = 'none'; // Spinner display removed
-            if (btn) {
-              btn.classList.remove('btn-pulsing');
-              btn.disabled = false;
-              btn.textContent = originalText;
+            btn.classList.remove('btn-pulsing');
+            btn.disabled = false;
+            btn.textContent = originalText;
+            const msg = err.message;
+            if (msg.includes('Overwrite?')) {
+              showReplaceModal(msg).then(choice => {
+                if (choice === 'replace') {
+                  generatePackageForLesson(code, grade, true);
+                }
+              });
+            } else {
+              alert('Error packaging ' + code + ': ' + msg);
             }
-            alert('Network error: ' + err.message);
           });
       }
 
