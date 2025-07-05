@@ -294,8 +294,13 @@
         background: #f0f0f0; /* or var(--bg) */
       }
     </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
+    <div id="loginDiv" style="display:grid;place-items:center;height:100vh;">
+      <div id="g_id_signin"></div>
+    </div>
+    <div id="appDiv" style="display:none;">
     <div class="card">
       <h2>Worksheet Generator</h2>
       <div id="bulkSection">
@@ -351,6 +356,7 @@
         </div>
       </div>
     </div>
+    </div>
 
     <!-- Replace/Skip Modal -->
     <div id="replaceModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:10;">
@@ -365,6 +371,23 @@
     <!-- Removed historyPopup container -->
 
     <script>
+      let idToken;
+      window.onload = () => {
+        google.accounts.id.initialize({
+          client_id: '285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com',
+          callback: handleCredentialResponse
+        });
+        google.accounts.id.renderButton(
+          document.getElementById('g_id_signin'),
+          { theme: 'outline', size: 'large' }
+        );
+      };
+      function handleCredentialResponse(response) {
+        idToken = response.credential;
+        document.getElementById('loginDiv').style.display = 'none';
+        document.getElementById('appDiv').style.display = 'block';
+        loadPrevious();
+      }
       // Replace/Skip modal controls
       const API_URL = 'https://script.google.com/macros/s/AKfycbwRPsqP7o04EEOjKNygILkqemp1WgCz2itpvk-Kj9Kvdk8D0YQNrpmIXsOmZZkFaaR_4A/exec';
       /**
@@ -376,6 +399,8 @@
       function callApi(action, params = {}) {
         const url = new URL(API_URL);
         url.searchParams.set('action', action);
+        if (!idToken) throw new Error('User not signed in');
+        url.searchParams.set('id_token', idToken);
         Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
         return fetch(url)
           .then(r => r.json())
