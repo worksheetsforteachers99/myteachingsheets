@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Worksheet Generator</title>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
       :root {
         --brand: #005f73;
@@ -299,8 +298,6 @@
   <body>
     <div class="card">
       <h2>Worksheet Generator</h2>
-      <div id="gsi-button" style="margin: 1em 0;"></div>
-      <button id="copyBtn" class="btn-form" disabled>Copy Latest Package to My Drive</button>
       <div id="bulkSection">
         <div class="form-group">
           <label for="bulkGrade">Grade Level</label>
@@ -368,59 +365,6 @@
     <!-- Removed historyPopup container -->
 
     <script>
-      // --- Google Sign-In and Drive copy setup ---
-      const CLIENT_ID = '285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com';
-      let userAccessToken = '';
-      // Initialize GSI token client
-      let tokenClient;
-      window.onload = function() {
-        if (window.google && google.accounts) {
-          tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/drive',
-            callback: (tokenResponse) => {
-              userAccessToken = tokenResponse.access_token;
-              document.getElementById('copyBtn').disabled = false;
-            }
-          });
-          // Render the Google Sign-In button
-          google.accounts.id.initialize({ client_id: CLIENT_ID });
-          google.accounts.id.renderButton(
-            document.getElementById('gsi-button'),
-            { theme: 'outline', size: 'large' }
-          );
-        }
-      };
-      document.addEventListener('DOMContentLoaded', function() {
-        const copyBtn = document.getElementById('copyBtn');
-        copyBtn.addEventListener('click', async () => {
-          if (!userAccessToken) {
-            if (tokenClient) tokenClient.requestAccessToken();
-            return;
-          }
-          const folderId = window.LATEST_PACKAGE_FOLDER_ID;
-          if (!folderId) return alert('No package folder ID available.');
-          try {
-            const res = await fetch(API_URL, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + userAccessToken
-              },
-              body: JSON.stringify({ action: 'copyToUser', folderId })
-            });
-            const json = await res.json();
-            if (json.success) {
-              window.open(json.data.newFolderUrl, '_blank');
-            } else {
-              alert('Copy failed: ' + json.error);
-            }
-          } catch (err) {
-            alert('Network error: ' + err.message);
-          }
-        });
-      });
-      // --- End Google Sign-In setup ---
       // Replace/Skip modal controls
       const API_URL = 'https://script.google.com/macros/s/AKfycbwRPsqP7o04EEOjKNygILkqemp1WgCz2itpvk-Kj9Kvdk8D0YQNrpmIXsOmZZkFaaR_4A/exec';
       /**
@@ -647,32 +591,33 @@
           g = gradeInput ? gradeInput.value : '';
         }
         const btn = document.getElementById(`pkg_${g}_${code}`);
-        const spin = document.getElementById('spin_pkg_' + code);
+        // const spin = document.getElementById('spin_pkg_' + code); // Spinner removed
         // Animate the button
         if (btn) {
           btn.classList.add('btn-pulsing');
           btn.disabled = true;
         }
-        if (spin) spin.style.display = 'block';
+        // if (spin) spin.style.display = 'block'; // Spinner display removed
         const originalText = btn ? btn.textContent : '';
         fetch(`${API_URL}?action=package&grade=${g}&code=${code}&overwrite=${overwrite}`)
           .then(r => r.json())
           .then(json => {
             if (json.success) {
-              window.open(json.data.packageUrl, '_blank');
-              // Set the latest package folder ID for Drive copy
-              if (json.data && json.data.packageFolderId) {
-                window.LATEST_PACKAGE_FOLDER_ID = json.data.packageFolderId;
-              }
-              if (spin) spin.style.display = 'none';
+              // The server currently returns the URL directly as a string.
+              // Support both formats just in case.
+              const packageUrl = typeof json.data === 'string'
+                ? json.data
+                : json.data.packageUrl;
+
+              // if (spin) spin.style.display = 'none'; // Spinner display removed
               if (btn) {
                 btn.classList.remove('btn-pulsing');
-                btn.textContent = 'Done';
+                btn.textContent = 'Open';
                 btn.disabled = false;
-                btn.onclick = () => window.open(json.data.packageUrl, '_blank');
+                btn.onclick = () => window.open(packageUrl, '_blank');
               }
             } else {
-              if (spin) spin.style.display = 'none';
+              // if (spin) spin.style.display = 'none'; // Spinner display removed
               if (btn) {
                 btn.classList.remove('btn-pulsing');
                 btn.disabled = false;
@@ -691,7 +636,7 @@
             }
           })
           .catch(err => {
-            if (spin) spin.style.display = 'none';
+            // if (spin) spin.style.display = 'none'; // Spinner display removed
             if (btn) {
               btn.classList.remove('btn-pulsing');
               btn.disabled = false;
