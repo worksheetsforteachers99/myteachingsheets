@@ -374,15 +374,27 @@
        * @returns {Promise<object>}
        */
       function callApi(action, params = {}) {
-        const url = new URL(API_URL);
-        url.searchParams.set('action', action);
-        Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-        return fetch(url)
-          .then(r => r.json())
-          .then(json => {
-            if (!json.success) throw new Error(json.error || 'Unknown API error');
-            return json.data;
-          });
+        // JSONP-enabled call
+        const callbackName = 'cb';
+        // Clean up any previous callback
+        if (window[callbackName]) delete window[callbackName];
+        return new Promise((resolve, reject) => {
+          // Define global callback for JSONP response
+          window[callbackName] = (resp) => {
+            delete window[callbackName];
+            if (resp.success) resolve(resp.data);
+            else reject(new Error(resp.error));
+          };
+          // Build URL with action, params, and callback
+          const url = new URL(API_URL);
+          url.searchParams.set('action', action);
+          Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+          url.searchParams.set('callback', callbackName);
+          // Insert script tag to perform JSONP request
+          const script = document.createElement('script');
+          script.src = url.toString();
+          document.body.appendChild(script);
+        });
       }
       const lessonUrls = {};
       const replaceModal     = document.getElementById('replaceModal');
