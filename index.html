@@ -373,14 +373,16 @@
         document.getElementById('signinButton').style.display = 'none';
         document.getElementById('mainUI').style.visibility = 'visible';
       }
-      google.accounts.id.initialize({
-        client_id: '285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com',
-        callback: handleCredentialResponse
-      });
-      google.accounts.id.renderButton(
-        document.getElementById('signinButton'),
-        { theme: 'outline', size: 'large' }
-      );
+      window.onload = function() {
+        google.accounts.id.initialize({
+          client_id: '285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com',
+          callback: handleCredentialResponse
+        });
+        google.accounts.id.renderButton(
+          document.getElementById('signinButton'),
+          { theme: 'outline', size: 'large' }
+        );
+      };
       // Replace/Skip modal controls
       const API_URL = 'https://script.google.com/macros/s/AKfycbwRPsqP7o04EEOjKNygILkqemp1WgCz2itpvk-Kj9Kvdk8D0YQNrpmIXsOmZZkFaaR_4A/exec';
       /**
