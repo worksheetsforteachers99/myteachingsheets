@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
     <title>Worksheet Generator</title>
-    <script src="https://accounts.google.com/gsi/client" defer></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
     <style>
       :root {
         --brand: #005f73;
@@ -355,7 +356,9 @@
       </div>
     </div>
     </div>
-    <div id="signinButton" style="text-align:center; padding-top:2em;"></div>
+    <div style="text-align:center; padding-top:2em;">
+      <button id="signInBtn">Sign in with Google</button>
+    </div>
 
     <!-- Replace/Skip Modal -->
     <div id="replaceModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:10;">
@@ -370,54 +373,29 @@
     <!-- Removed historyPopup container -->
 
     <script>
-      function handleCredentialResponse(response) {
-        document.getElementById('signinButton').style.display = 'none';
+      // GAPI Auth2/Execution API integration
+      let authInstance;
+      function initGapi() {
+        gapi.load('client:auth2', () => {
+          gapi.client.init({
+            apiKey: 'AIzaSyBj0uJbPnoSBh3iVu357lCHN3IRfJZfBXU',
+            clientId: '285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com',
+            discoveryDocs: ['https://script.googleapis.com/$discovery/rest?version=v1'],
+            scope: 'https://www.googleapis.com/auth/script.projects https://www.googleapis.com/auth/drive.file'
+          }).then(() => {
+            authInstance = gapi.auth2.getAuthInstance();
+            document.getElementById('signInBtn').onclick = () => {
+              authInstance.signIn().then(onSignIn);
+            };
+          });
+        });
+      }
+      function onSignIn(googleUser) {
+        document.getElementById('signInBtn').style.display = 'none';
         document.getElementById('mainUI').style.visibility = 'visible';
+        loadPrevious(); // call your initial load via Execution API
       }
-      window.onload = function() {
-        google.accounts.id.initialize({
-          client_id: '285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com',
-          callback: handleCredentialResponse
-        });
-        google.accounts.id.renderButton(
-          document.getElementById('signinButton'),
-          { theme: 'outline', size: 'large' }
-        );
-      };
       // Replace/Skip modal controls
-      const API_URL = 'https://script.google.com/macros/s/AKfycbwRPsqP7o04EEOjKNygILkqemp1WgCz2itpvk-Kj9Kvdk8D0YQNrpmIXsOmZZkFaaR_4A/exec';
-      /**
-       * Call the Apps Script JSON API using JSONP.
-       * @param {string} action
-       * @param {object} params
-       * @returns {Promise<object>}
-       */
-      function callApi(action, params = {}) {
-        return new Promise((resolve, reject) => {
-          const callbackName = 'jsonp_cb_' + action + '_' + Date.now();
-          // Define the JSONP callback
-          window[callbackName] = (response) => {
-            delete window[callbackName];
-            document.body.removeChild(script);
-            if (response.success) resolve(response.data);
-            else reject(new Error(response.error || 'Unknown API error'));
-          };
-          // Build URL with callback
-          const url = new URL(API_URL);
-          url.searchParams.set('action', action);
-          url.searchParams.set('callback', callbackName);
-          Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-          // Create script tag
-          const script = document.createElement('script');
-          script.src = url.toString();
-          script.onerror = () => {
-            delete window[callbackName];
-            document.body.removeChild(script);
-            reject(new Error('Network error'));
-          };
-          document.body.appendChild(script);
-        });
-      }
       const lessonUrls = {};
       const replaceModal     = document.getElementById('replaceModal');
       const modalMessage     = document.getElementById('modalMessage');
@@ -789,35 +767,35 @@
        */
       function loadPrevious() {
         showMainPlaceholder();
-        callApi('listPrevious')
-          .then(previousItems => {
-            // expected previousItems = [{ code, worksheetUrl, answerKeyUrl, generatedTime, grade }]
-            recentMode = true;
-            const container = bulkTableContainer;
-            container.innerHTML = `<table id="bulkTable"><thead><tr>
-              <th>Grade</th>
-              <th>Lesson</th>
-              <th>Worksheet</th>
-              <th>Answer Key</th>
-              <th>Last Edit</th>
-              <th>Package</th>
-              <th class="menu-cell"></th>
-            </tr></thead><tbody id="bulkTableBody"></tbody></table>`;
-            const tbody = document.getElementById('bulkTableBody');
-            previousItems
-              .sort((a, b) => new Date(b.generatedTime) - new Date(a.generatedTime))
-              .forEach(item => {
-                addTableRow(tbody, item.code, item.grade);
-                updateTableRow(item.code, item.grade, {
-                  worksheetUrl: item.worksheetUrl,
-                  answerKeyUrl: item.answerKeyUrl,
-                  generatedTime: item.generatedTime
-                });
+        gapi.client.script.scripts.run({
+          scriptId: 'AKfycbwRPsqP7o04EEOjKNygILkqemp1WgCz2itpvk-Kj9Kvdk8D0YQNrpmIXsOmZZkFaaR_4A',
+          resource: { function: 'listPreviouslyGenerated' }
+        }).then(resp => {
+          const previousItems = resp.result.response.result;
+          // expected previousItems = [{ code, worksheetUrl, answerKeyUrl, generatedTime, grade }]
+          recentMode = true;
+          const container = bulkTableContainer;
+          container.innerHTML = `<table id="bulkTable"><thead><tr>
+            <th>Grade</th>
+            <th>Lesson</th>
+            <th>Worksheet</th>
+            <th>Answer Key</th>
+            <th>Last Edit</th>
+            <th>Package</th>
+            <th class="menu-cell"></th>
+          </tr></thead><tbody id="bulkTableBody"></tbody></table>`;
+          const tbody = document.getElementById('bulkTableBody');
+          previousItems
+            .sort((a, b) => new Date(b.generatedTime) - new Date(a.generatedTime))
+            .forEach(item => {
+              addTableRow(tbody, item.code, item.grade);
+              updateTableRow(item.code, item.grade, {
+                worksheetUrl: item.worksheetUrl,
+                answerKeyUrl: item.answerKeyUrl,
+                generatedTime: item.generatedTime
               });
-          })
-          .catch(err => {
-            alert('Error loading previous: ' + err.message);
-          });
+            });
+        }).catch(err => alert('Error loading previous: ' + err.result.error.message));
       }
       /**
        * Opens the context menu for preview actions at the given button.
@@ -1003,8 +981,8 @@
         contextMenu.style.display = 'none';
       });
       // Removed all history popup and related logic
-    // On page load, show the recent lessons table immediately
-    loadPrevious();
+    // On page load, initialize GAPI
+    window.addEventListener('load', initGapi);
     // Live update relative “x ago” for generated-time cells
     setInterval(() => {
       document.querySelectorAll('.generated-time').forEach(cell => {
