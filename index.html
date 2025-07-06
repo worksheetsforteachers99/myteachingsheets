@@ -3,9 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
     <title>Worksheet Generator</title>
-    <script src="https://apis.google.com/js/api.js" defer onload="initGapi()"></script>
     <style>
       :root {
         --brand: #005f73;
@@ -298,7 +296,6 @@
     </style>
   </head>
   <body>
-    <div id="mainUI" style="visibility:hidden">
     <div class="card">
       <h2>Worksheet Generator</h2>
       <div id="bulkSection">
@@ -354,10 +351,6 @@
         </div>
       </div>
     </div>
-    </div>
-    <div style="text-align:center; padding-top:2em;">
-      <button id="signInBtn">Sign in with Google</button>
-    </div>
 
     <!-- Replace/Skip Modal -->
     <div id="replaceModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:10;">
@@ -372,29 +365,25 @@
     <!-- Removed historyPopup container -->
 
     <script>
-      // GAPI Auth2/Execution API integration
-      let authInstance;
-      function initGapi() {
-        gapi.load('client:auth2', () => {
-          gapi.client.init({
-            apiKey: 'AIzaSyBj0uJbPnoSBh3iVu357lCHN3IRfJZfBXU',
-            clientId: '285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com',
-            discoveryDocs: ['https://script.googleapis.com/$discovery/rest?version=v1'],
-            scope: 'https://www.googleapis.com/auth/script.projects https://www.googleapis.com/auth/drive.file'
-          }).then(() => {
-            authInstance = gapi.auth2.getAuthInstance();
-            document.getElementById('signInBtn').onclick = () => {
-              authInstance.signIn().then(onSignIn);
-            };
-          });
-        });
-      }
-      function onSignIn(googleUser) {
-        document.getElementById('signInBtn').style.display = 'none';
-        document.getElementById('mainUI').style.visibility = 'visible';
-        loadPrevious(); // call your initial load via Execution API
-      }
       // Replace/Skip modal controls
+      const API_URL = 'https://script.google.com/macros/s/AKfycbxZ0qs00vigjKube-t4vgrUQX21IhnOGD4EAhBeUGMHcWYAYqeGVW-RgY-F5P82rT1x/exec';
+      /**
+       * Call the Apps Script JSON API.
+       * @param {string} action
+       * @param {object} params
+       * @returns {Promise<object>}
+       */
+      function callApi(action, params = {}) {
+        const url = new URL(API_URL);
+        url.searchParams.set('action', action);
+        Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+        return fetch(url)
+          .then(r => r.json())
+          .then(json => {
+            if (!json.success) throw new Error(json.error || 'Unknown API error');
+            return json.data;
+          });
+      }
       const lessonUrls = {};
       const replaceModal     = document.getElementById('replaceModal');
       const modalMessage     = document.getElementById('modalMessage');
@@ -610,15 +599,35 @@
         }
         if (spin) spin.style.display = 'block';
         const originalText = btn ? btn.textContent : '';
-        callApi('package', { grade: g, code: code, overwrite: overwrite })
-          .then(packageUrl => {
-            window.open(packageUrl, '_blank');
-            if (spin) spin.style.display = 'none';
-            if (btn) {
-              btn.classList.remove('btn-pulsing');
-              btn.textContent = 'Done';
-              btn.disabled = false;
-              btn.onclick = () => window.open(packageUrl, '_blank');
+        fetch(`${API_URL}?action=package&grade=${g}&code=${code}&overwrite=${overwrite}`)
+          .then(r => r.json())
+          .then(json => {
+            if (json.success) {
+              window.open(json.data.packageUrl, '_blank');
+              if (spin) spin.style.display = 'none';
+              if (btn) {
+                btn.classList.remove('btn-pulsing');
+                btn.textContent = 'Done';
+                btn.disabled = false;
+                btn.onclick = () => window.open(json.data.packageUrl, '_blank');
+              }
+            } else {
+              if (spin) spin.style.display = 'none';
+              if (btn) {
+                btn.classList.remove('btn-pulsing');
+                btn.disabled = false;
+                btn.textContent = originalText;
+              }
+              const msg = json.error || '';
+              if (msg.includes('Overwrite?')) {
+                showReplaceModal(msg).then(choice => {
+                  if (choice === 'replace') {
+                    generatePackageForLesson(code, grade, true);
+                  }
+                });
+              } else {
+                alert('Error packaging ' + code + ': ' + msg);
+              }
             }
           })
           .catch(err => {
@@ -628,16 +637,7 @@
               btn.disabled = false;
               btn.textContent = originalText;
             }
-            const msg = err.message || '';
-            if (msg.includes('Overwrite?')) {
-              showReplaceModal(msg).then(choice => {
-                if (choice === 'replace') {
-                  generatePackageForLesson(code, grade, true);
-                }
-              });
-            } else {
-              alert('Error packaging ' + code + ': ' + msg);
-            }
+            alert('Network error: ' + err.message);
           });
       }
 
@@ -766,35 +766,35 @@
        */
       function loadPrevious() {
         showMainPlaceholder();
-        gapi.client.script.scripts.run({
-          scriptId: 'AKfycbwRPsqP7o04EEOjKNygILkqemp1WgCz2itpvk-Kj9Kvdk8D0YQNrpmIXsOmZZkFaaR_4A',
-          resource: { function: 'listPreviouslyGenerated' }
-        }).then(resp => {
-          const previousItems = resp.result.response.result;
-          // expected previousItems = [{ code, worksheetUrl, answerKeyUrl, generatedTime, grade }]
-          recentMode = true;
-          const container = bulkTableContainer;
-          container.innerHTML = `<table id="bulkTable"><thead><tr>
-            <th>Grade</th>
-            <th>Lesson</th>
-            <th>Worksheet</th>
-            <th>Answer Key</th>
-            <th>Last Edit</th>
-            <th>Package</th>
-            <th class="menu-cell"></th>
-          </tr></thead><tbody id="bulkTableBody"></tbody></table>`;
-          const tbody = document.getElementById('bulkTableBody');
-          previousItems
-            .sort((a, b) => new Date(b.generatedTime) - new Date(a.generatedTime))
-            .forEach(item => {
-              addTableRow(tbody, item.code, item.grade);
-              updateTableRow(item.code, item.grade, {
-                worksheetUrl: item.worksheetUrl,
-                answerKeyUrl: item.answerKeyUrl,
-                generatedTime: item.generatedTime
+        callApi('listPrevious')
+          .then(previousItems => {
+            // expected previousItems = [{ code, worksheetUrl, answerKeyUrl, generatedTime, grade }]
+            recentMode = true;
+            const container = bulkTableContainer;
+            container.innerHTML = `<table id="bulkTable"><thead><tr>
+              <th>Grade</th>
+              <th>Lesson</th>
+              <th>Worksheet</th>
+              <th>Answer Key</th>
+              <th>Last Edit</th>
+              <th>Package</th>
+              <th class="menu-cell"></th>
+            </tr></thead><tbody id="bulkTableBody"></tbody></table>`;
+            const tbody = document.getElementById('bulkTableBody');
+            previousItems
+              .sort((a, b) => new Date(b.generatedTime) - new Date(a.generatedTime))
+              .forEach(item => {
+                addTableRow(tbody, item.code, item.grade);
+                updateTableRow(item.code, item.grade, {
+                  worksheetUrl: item.worksheetUrl,
+                  answerKeyUrl: item.answerKeyUrl,
+                  generatedTime: item.generatedTime
+                });
               });
-            });
-        }).catch(err => alert('Error loading previous: ' + err.result.error.message));
+          })
+          .catch(err => {
+            alert('Error loading previous: ' + err.message);
+          });
       }
       /**
        * Opens the context menu for preview actions at the given button.
@@ -980,6 +980,8 @@
         contextMenu.style.display = 'none';
       });
       // Removed all history popup and related logic
+    // On page load, show the recent lessons table immediately
+    loadPrevious();
     // Live update relative “x ago” for generated-time cells
     setInterval(() => {
       document.querySelectorAll('.generated-time').forEach(cell => {
