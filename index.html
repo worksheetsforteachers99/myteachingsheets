@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Worksheet Generator</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
       :root {
         --brand: #005f73;
@@ -296,6 +297,7 @@
     </style>
   </head>
   <body>
+    <div id="mainUI" style="visibility:hidden">
     <div class="card">
       <h2>Worksheet Generator</h2>
       <div id="bulkSection">
@@ -351,6 +353,8 @@
         </div>
       </div>
     </div>
+    </div>
+    <div id="signinButton" style="text-align:center; padding-top:2em;"></div>
 
     <!-- Replace/Skip Modal -->
     <div id="replaceModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:10;">
@@ -365,6 +369,18 @@
     <!-- Removed historyPopup container -->
 
     <script>
+      function handleCredentialResponse(response) {
+        document.getElementById('signinButton').style.display = 'none';
+        document.getElementById('mainUI').style.visibility = 'visible';
+      }
+      google.accounts.id.initialize({
+        client_id: '285330907985-28sa896g7gvra3tvj21g2cb8her7sgqd.apps.googleusercontent.com',
+        callback: handleCredentialResponse
+      });
+      google.accounts.id.renderButton(
+        document.getElementById('signinButton'),
+        { theme: 'outline', size: 'large' }
+      );
       // Replace/Skip modal controls
       const API_URL = 'https://script.google.com/macros/s/AKfycbwRPsqP7o04EEOjKNygILkqemp1WgCz2itpvk-Kj9Kvdk8D0YQNrpmIXsOmZZkFaaR_4A/exec';
       /**
@@ -377,7 +393,7 @@
         const url = new URL(API_URL);
         url.searchParams.set('action', action);
         Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-        return fetch(url)
+        return fetch(url, { credentials: 'include' })
           .then(r => r.json())
           .then(json => {
             if (!json.success) throw new Error(json.error || 'Unknown API error');
@@ -599,7 +615,7 @@
         }
         if (spin) spin.style.display = 'block';
         const originalText = btn ? btn.textContent : '';
-        fetch(`${API_URL}?action=package&grade=${g}&code=${code}&overwrite=${overwrite}`)
+        fetch(`${API_URL}?action=package&grade=${g}&code=${code}&overwrite=${overwrite}`, { credentials: 'include' })
           .then(r => r.json())
           .then(json => {
             if (json.success) {
