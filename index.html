@@ -608,7 +608,7 @@
                 btn.classList.remove('btn-pulsing');
                 btn.textContent = 'Open';
                 btn.disabled = false;
-                btn.onclick = () => window.open(json.data.packageUrl, '_blank');
+                btn.onclick = () => window.open(json.data, '_blank');
               }
             } else {
               if (spin) spin.style.display = 'none';
