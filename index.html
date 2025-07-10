@@ -533,7 +533,7 @@
           <td class="generated-time"></td>
           <td style="padding-right:0.5em;">
             <button class="btn-package" disabled id="pkg_${grade}_${code}" onclick="generatePackageForLesson('${code}', '${grade}')">Generate</button>
-            <button class="btn-form" disabled id="copy_${grade}_${code}" onclick="copyPackage('${code}', '${grade}')">Copy</button>
+            <button class="btn-form" id="copy_${grade}_${code}" style="display:none;" onclick="copyPackage('${code}', '${grade}')">Copy</button>
             <div class="spinner" id="spin_pkg_${code}"></div>
           </td>
           <td class="menu-cell">
@@ -559,6 +559,12 @@
         if (aBtn) {
           aBtn.disabled = false;
           aBtn.onclick = () => window.open(urls.answerKeyUrl, '_blank');
+        }
+        // Show and enable copy button
+        const copyBtn = document.getElementById(`copy_${grade}_${code}`);
+        if (copyBtn) {
+          copyBtn.style.display = 'inline-block';
+          copyBtn.disabled = false;
         }
         // Cache URLs for context menu actions
         lessonUrls[`${grade}_${code}`] = urls;
@@ -610,6 +616,12 @@
                 btn.textContent = 'Open';
                 btn.disabled = false;
                 btn.onclick = () => window.open(json.data, '_blank');
+              }
+              // Show and enable copy button
+              const copyBtn = document.getElementById(`copy_${g}_${code}`);
+              if (copyBtn) {
+                copyBtn.style.display = 'inline-block';
+                copyBtn.disabled = false;
               }
             } else {
               // Removed: if (spin) spin.style.display = 'none';
