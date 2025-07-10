@@ -533,6 +533,7 @@
           <td class="generated-time"></td>
           <td style="padding-right:0.5em;">
             <button class="btn-package" disabled id="pkg_${grade}_${code}" onclick="generatePackageForLesson('${code}', '${grade}')">Generate</button>
+            <button class="btn-form" disabled id="copy_${grade}_${code}" onclick="copyPackage('${code}', '${grade}')">Copy</button>
             <div class="spinner" id="spin_pkg_${code}"></div>
           </td>
           <td class="menu-cell">
@@ -1000,3 +1001,27 @@
     </script>
   </body>
 </html>
+      /**
+       * Copies the package folder for a lesson to the user's Drive and opens the new folder.
+       */
+      function copyPackage(code, grade) {
+        const copyBtn = document.getElementById(`copy_${grade}_${code}`);
+        const originalText = copyBtn.textContent;
+        copyBtn.disabled = true;
+        fetch(`${API_URL}?action=copyPackage&grade=${grade}&code=${code}`)
+          .then(r => r.json())
+          .then(json => {
+            if (json.success) {
+              window.open(json.data, '_blank');
+            } else {
+              alert('Error copying package ' + code + ': ' + json.error);
+            }
+          })
+          .catch(err => {
+            alert('Network error: ' + err.message);
+          })
+          .finally(() => {
+            copyBtn.disabled = false;
+            copyBtn.textContent = originalText;
+          });
+      }
