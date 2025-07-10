@@ -3,8 +3,6 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <title>Worksheet Generator</title>
     <style>
       :root {
@@ -299,19 +297,6 @@
   </head>
   <body>
     <div class="card">
-      <!-- Google Sign-in Button -->
-      <div id="g_id_onload"
-           data-client_id="177910658866-fpjerji2q8n9tst7sihr4vofuuem03u9.apps.googleusercontent.com"
-           data-auto_prompt="false">
-      </div>
-      <div class="g_id_signin"
-           data-type="standard"
-           data-shape="rectangular"
-           data-theme="outline"
-           data-text="signin_with"
-           data-size="large"
-           data-logo_alignment="center">
-      </div>
       <h2>Worksheet Generator</h2>
       <div id="bulkSection">
         <div class="form-group">
@@ -392,20 +377,12 @@
         const url = new URL(API_URL);
         url.searchParams.set('action', action);
         Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-
-        return fetch(url.toString(), {
-          method: 'GET',
-          mode: 'cors',
-          credentials: 'include'   // ← send Google auth cookie
-        })
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.json();
-        })
-        .then(json => {
-          if (!json.success) throw new Error(json.error || 'Unknown API error');
-          return json.data;
-        });
+        return fetch(url)
+          .then(r => r.json())
+          .then(json => {
+            if (!json.success) throw new Error(json.error || 'Unknown API error');
+            return json.data;
+          });
       }
       const lessonUrls = {};
       const replaceModal     = document.getElementById('replaceModal');
@@ -1020,23 +997,6 @@
         cell.textContent = rel;
       });
     }, 1000);
-    </script>
-    <script>
-      function handleCredentialResponse(response) {
-        console.log('Logged in:', response);
-        // Now calls to callApi will send credentials
-      }
-
-      window.onload = function() {
-        google.accounts.id.initialize({
-          client_id: '177910658866-fpjerji2q8n9tst7sihr4vofuuem03u9.apps.googleusercontent.com',
-          callback: handleCredentialResponse
-        });
-        google.accounts.id.renderButton(
-          document.querySelector('.g_id_signin'),
-          { theme: 'outline', size: 'large' }
-        );
-      };
     </script>
   </body>
 </html>
