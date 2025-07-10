@@ -301,10 +301,12 @@
       function gapiInit() {
         gapi.load('client:auth2', () => {
           gapi.client.init({
-            apiKey: 'AIzaSyBA_CuUWkAl25xoBwkWihBhf5RBcxTnQYI',
+            apiKey: 'YOUR_ACTUAL_API_KEY',
             clientId: '177910658866-fmahl0uvk1hohqjlnhmaifjjs0422kmt.apps.googleusercontent.com',
             discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-            scope: 'https://www.googleapis.com/auth/drive'
+            scope: 'https://www.googleapis.com/auth/drive',
+            ux_mode: 'popup',
+            cookie_policy: 'single_host_origin'
           });
         });
       }
