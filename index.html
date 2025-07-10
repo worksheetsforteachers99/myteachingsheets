@@ -389,37 +389,22 @@
        * @returns {Promise<object>}
        */
       function callApi(action, params = {}) {
-        return new Promise((resolve, reject) => {
-          // Generate a unique callback name each time
-          const cbName = 'jsonp_cb_' + Math.random().toString(36).substr(2, 8);
-          // Attach the callback to window
-          window[cbName] = (payload) => {
-            delete window[cbName];
-            script.remove();
-            if (!payload || payload.success === undefined) {
-              reject(new Error('Malformed response'));
-            } else if (!payload.success) {
-              reject(new Error(payload.error || 'Unknown API error'));
-            } else {
-              resolve(payload.data);
-            }
-          };
+        const url = new URL(API_URL);
+        url.searchParams.set('action', action);
+        Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
-          // Build URL with query params and callback name
-          const url = new URL(API_URL);
-          url.searchParams.set('action', action);
-          Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-          url.searchParams.set('callback', cbName);
-
-          // Inject <script> to perform the request
-          const script = document.createElement('script');
-          script.src = url.toString();
-          script.onerror = () => {
-            delete window[cbName];
-            script.remove();
-            reject(new Error('Network error or CORS blocked.'));
-          };
-          document.body.appendChild(script);
+        return fetch(url.toString(), {
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'include'   // ← send Google auth cookie
+        })
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then(json => {
+          if (!json.success) throw new Error(json.error || 'Unknown API error');
+          return json.data;
         });
       }
       const lessonUrls = {};
