@@ -315,30 +315,35 @@
 
       // Copy folder and its contents to user's Drive
       async function copyFolderToUserDrive(folderUrl) {
+        // Ensure user is signed in
+        const authInstance = gapi.auth2.getAuthInstance();
+        if (!authInstance.isSignedIn.get()) {
+          await authInstance.signIn();
+        }
         const folderId = folderUrl.match(/[-\w]{25,}/)[0];
-        // Create new folder for the copy
-        const newFolder = await gapi.client.drive.files.create({
-          resource: { name: 'Copy of Package ' + folderId, mimeType: 'application/vnd.google-apps.folder' }
+        // Create new folder in user's Drive
+        const createRes = await gapi.client.drive.files.create({
+          resource: { name: 'Copy of Package ' + folderId, mimeType: 'application/vnd.google-apps.folder' },
+          fields: 'id, name'
         });
-        const newFolderId = newFolder.result.id;
-        // List files in original folder
+        const newFolderId = createRes.result.id;
         let pageToken = null;
         do {
-          const res = await gapi.client.drive.files.list({
+          const listRes = await gapi.client.drive.files.list({
             q: `'${folderId}' in parents and trashed=false`,
             fields: 'nextPageToken, files(id, name)',
             pageToken: pageToken
           });
-          for (const file of res.result.files) {
-            // Copy each file into new folder
+          const files = listRes.result.files || [];
+          for (const file of files) {
             await gapi.client.drive.files.copy({
               fileId: file.id,
               resource: { parents: [newFolderId], name: file.name }
             });
           }
-          pageToken = res.result.nextPageToken;
+          pageToken = listRes.result.nextPageToken;
         } while (pageToken);
-        alert('Package copied to your Drive folder: ' + newFolder.result.name);
+        alert('Copied to your Drive folder: ' + createRes.result.name);
       }
     </script>
   </head>
