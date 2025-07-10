@@ -598,13 +598,11 @@
           btn.classList.add('btn-pulsing');
           btn.disabled = true;
         }
-        // Removed: if (spin) spin.style.display = 'block';
         const originalText = btn ? btn.textContent : '';
         fetch(`${API_URL}?action=package&grade=${g}&code=${code}&overwrite=${overwrite}`)
           .then(r => r.json())
           .then(json => {
             if (json.success) {
-              // Removed: if (spin) spin.style.display = 'none';
               if (btn) {
                 btn.classList.remove('btn-pulsing');
                 btn.textContent = 'Open';
@@ -618,7 +616,6 @@
                 copyBtn.disabled = false;
               }
             } else {
-              // Removed: if (spin) spin.style.display = 'none';
               if (btn) {
                 btn.classList.remove('btn-pulsing');
                 btn.disabled = false;
@@ -637,13 +634,38 @@
             }
           })
           .catch(err => {
-            // Removed: if (spin) spin.style.display = 'none';
             if (btn) {
               btn.classList.remove('btn-pulsing');
               btn.disabled = false;
               btn.textContent = originalText;
             }
             alert('Network error: ' + err.message);
+          });
+      }
+
+      /**
+       * Copies the generated package folder to the user's Drive and opens it.
+       */
+      function copyPackage(code, grade) {
+        const copyBtn = document.getElementById(`copy_${grade}_${code}`);
+        if (!copyBtn) return;
+        const originalText = copyBtn.textContent;
+        copyBtn.disabled = true;
+        fetch(`${API_URL}?action=copyPackage&grade=${grade}&code=${code}`)
+          .then(r => r.json())
+          .then(json => {
+            if (json.success) {
+              window.open(json.data, '_blank');
+            } else {
+              alert('Error copying package ' + code + ': ' + json.error);
+            }
+          })
+          .catch(err => {
+            alert('Network error: ' + err.message);
+          })
+          .finally(() => {
+            copyBtn.disabled = false;
+            copyBtn.textContent = originalText;
           });
       }
 
