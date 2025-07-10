@@ -294,6 +294,53 @@
         background: #f0f0f0; /* or var(--bg) */
       }
     </style>
+    <!-- Load Google API client -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+      // Google Drive API initialization
+      function gapiInit() {
+        gapi.load('client:auth2', () => {
+          gapi.client.init({
+            apiKey: 'AIzaSyA3c9-2p8p8QkQnA0z0oA5g9xk6yQ3jJq8o',
+            clientId: '101010101010-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com',
+            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+            scope: 'https://www.googleapis.com/auth/drive'
+          });
+        });
+      }
+      // Call on page load
+      window.addEventListener('load', () => {
+        gapiInit();
+      });
+
+      // Copy folder and its contents to user's Drive
+      async function copyFolderToUserDrive(folderUrl) {
+        const folderId = folderUrl.match(/[-\w]{25,}/)[0];
+        // Create new folder for the copy
+        const newFolder = await gapi.client.drive.files.create({
+          resource: { name: 'Copy of Package ' + folderId, mimeType: 'application/vnd.google-apps.folder' }
+        });
+        const newFolderId = newFolder.result.id;
+        // List files in original folder
+        let pageToken = null;
+        do {
+          const res = await gapi.client.drive.files.list({
+            q: `'${folderId}' in parents and trashed=false`,
+            fields: 'nextPageToken, files(id, name)',
+            pageToken: pageToken
+          });
+          for (const file of res.result.files) {
+            // Copy each file into new folder
+            await gapi.client.drive.files.copy({
+              fileId: file.id,
+              resource: { parents: [newFolderId], name: file.name }
+            });
+          }
+          pageToken = res.result.nextPageToken;
+        } while (pageToken);
+        alert('Package copied to your Drive folder: ' + newFolder.result.name);
+      }
+    </script>
   </head>
   <body>
     <div class="card">
@@ -609,6 +656,14 @@
                 btn.textContent = 'Open';
                 btn.disabled = false;
                 btn.onclick = () => window.open(json.data, '_blank');
+                // --- Insert Copy button next to Open button ---
+                const copyBtn = document.createElement('button');
+                copyBtn.textContent = 'Copy';
+                copyBtn.className   = 'btn-form';
+                copyBtn.style.marginLeft = '0.5em';
+                copyBtn.onclick = () => copyFolderToUserDrive(json.data);
+                btn.parentElement.appendChild(copyBtn);
+                // --- end Copy button logic ---
               }
             } else {
               // Removed: if (spin) spin.style.display = 'none';
