@@ -383,27 +383,40 @@
       // Replace/Skip modal controls
       const API_URL = 'https://script.google.com/macros/s/AKfycbxZ0qs00vigjKube-t4vgrUQX21IhnOGD4EAhBeUGMHcWYAYqeGVW-RgY-F5P82rT1x/exec';
       /**
-       * Call the Apps Script JSON API.
+       * Call the Apps Script JSON API using JSONP.
        * @param {string} action
        * @param {object} params
        * @returns {Promise<object>}
        */
       function callApi(action, params = {}) {
-        const url = new URL(API_URL);
-        url.searchParams.set('action', action);
-        Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-        return fetch(url.toString(), {
-          method: 'GET',
-          mode: 'cors',
-          credentials: 'include'
-        })
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.json();
-        })
-        .then(json => {
-          if (!json.success) throw new Error(json.error || 'Unknown API error');
-          return json.data;
+        return new Promise((resolve, reject) => {
+          // Generate a unique callback name
+          const callbackName = 'cb_' + Math.random().toString(36).substr(2, 9);
+          // Build URL with action, params, and callback
+          const url = new URL(API_URL);
+          url.searchParams.set('action', action);
+          Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+          url.searchParams.set('callback', callbackName);
+          // Define the callback on window
+          window[callbackName] = function(response) {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            if (response && response.success) {
+              resolve(response.data);
+            } else {
+              reject(new Error(response ? response.error : 'No response'));
+            }
+          };
+          // Create script tag
+          const script = document.createElement('script');
+          script.src = url.toString();
+          script.onerror = function() {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            reject(new Error('Network error loading JSONP script'));
+          };
+          // Inject into DOM
+          document.body.appendChild(script);
         });
       }
       const lessonUrls = {};
