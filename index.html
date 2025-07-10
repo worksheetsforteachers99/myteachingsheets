@@ -294,60 +294,6 @@
         background: #f0f0f0; /* or var(--bg) */
       }
     </style>
-    <!-- Load Google API client -->
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script>
-      // Google Drive API initialization
-      function gapiInit() {
-        gapi.load('client:auth2', () => {
-          gapi.client.init({
-            apiKey: 'YOUR_ACTUAL_API_KEY',
-            clientId: '177910658866-fmahl0uvk1hohqjlnhmaifjjs0422kmt.apps.googleusercontent.com',
-            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-            scope: 'https://www.googleapis.com/auth/drive',
-            ux_mode: 'popup',
-            cookie_policy: 'single_host_origin'
-          });
-        });
-      }
-      // Call on page load
-      window.addEventListener('load', () => {
-        gapiInit();
-      });
-
-      // Copy folder and its contents to user's Drive
-      async function copyFolderToUserDrive(folderUrl) {
-        // Ensure user is signed in
-        const authInstance = gapi.auth2.getAuthInstance();
-        if (!authInstance.isSignedIn.get()) {
-          await authInstance.signIn();
-        }
-        const folderId = folderUrl.match(/[-\w]{25,}/)[0];
-        // Create new folder in user's Drive
-        const createRes = await gapi.client.drive.files.create({
-          resource: { name: 'Copy of Package ' + folderId, mimeType: 'application/vnd.google-apps.folder' },
-          fields: 'id, name'
-        });
-        const newFolderId = createRes.result.id;
-        let pageToken = null;
-        do {
-          const listRes = await gapi.client.drive.files.list({
-            q: `'${folderId}' in parents and trashed=false`,
-            fields: 'nextPageToken, files(id, name)',
-            pageToken: pageToken
-          });
-          const files = listRes.result.files || [];
-          for (const file of files) {
-            await gapi.client.drive.files.copy({
-              fileId: file.id,
-              resource: { parents: [newFolderId], name: file.name }
-            });
-          }
-          pageToken = listRes.result.nextPageToken;
-        } while (pageToken);
-        alert('Copied to your Drive folder: ' + createRes.result.name);
-      }
-    </script>
   </head>
   <body>
     <div class="card">
@@ -663,14 +609,6 @@
                 btn.textContent = 'Open';
                 btn.disabled = false;
                 btn.onclick = () => window.open(json.data, '_blank');
-                // --- Insert Copy button next to Open button ---
-                const copyBtn = document.createElement('button');
-                copyBtn.textContent = 'Copy';
-                copyBtn.className   = 'btn-form';
-                copyBtn.style.marginLeft = '0.5em';
-                copyBtn.onclick = () => copyFolderToUserDrive(json.data);
-                btn.parentElement.appendChild(copyBtn);
-                // --- end Copy button logic ---
               }
             } else {
               // Removed: if (spin) spin.style.display = 'none';
