@@ -383,39 +383,42 @@
       // Replace/Skip modal controls
       const API_URL = 'https://script.google.com/macros/s/AKfycbxZ0qs00vigjKube-t4vgrUQX21IhnOGD4EAhBeUGMHcWYAYqeGVW-RgY-F5P82rT1x/exec';
       /**
-       * Call the Apps Script JSON API using JSONP.
+       * Call the Apps Script JSON API.
        * @param {string} action
        * @param {object} params
        * @returns {Promise<object>}
        */
       function callApi(action, params = {}) {
         return new Promise((resolve, reject) => {
-          // Generate a unique callback name
-          const callbackName = 'cb_' + Math.random().toString(36).substr(2, 9);
-          // Build URL with action, params, and callback
+          // Generate a unique callback name each time
+          const cbName = 'jsonp_cb_' + Math.random().toString(36).substr(2, 8);
+          // Attach the callback to window
+          window[cbName] = (payload) => {
+            delete window[cbName];
+            script.remove();
+            if (!payload || payload.success === undefined) {
+              reject(new Error('Malformed response'));
+            } else if (!payload.success) {
+              reject(new Error(payload.error || 'Unknown API error'));
+            } else {
+              resolve(payload.data);
+            }
+          };
+
+          // Build URL with query params and callback name
           const url = new URL(API_URL);
           url.searchParams.set('action', action);
           Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-          url.searchParams.set('callback', callbackName);
-          // Define the callback on window
-          window[callbackName] = function(response) {
-            delete window[callbackName];
-            document.body.removeChild(script);
-            if (response && response.success) {
-              resolve(response.data);
-            } else {
-              reject(new Error(response ? response.error : 'No response'));
-            }
-          };
-          // Create script tag
+          url.searchParams.set('callback', cbName);
+
+          // Inject <script> to perform the request
           const script = document.createElement('script');
           script.src = url.toString();
-          script.onerror = function() {
-            delete window[callbackName];
-            document.body.removeChild(script);
-            reject(new Error('Network error loading JSONP script'));
+          script.onerror = () => {
+            delete window[cbName];
+            script.remove();
+            reject(new Error('Network error or CORS blocked.'));
           };
-          // Inject into DOM
           document.body.appendChild(script);
         });
       }
