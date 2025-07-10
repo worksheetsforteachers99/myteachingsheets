@@ -560,12 +560,6 @@
           aBtn.disabled = false;
           aBtn.onclick = () => window.open(urls.answerKeyUrl, '_blank');
         }
-        // Show and enable copy button
-        const copyBtn = document.getElementById(`copy_${grade}_${code}`);
-        if (copyBtn) {
-          copyBtn.style.display = 'inline-block';
-          copyBtn.disabled = false;
-        }
         // Cache URLs for context menu actions
         lessonUrls[`${grade}_${code}`] = urls;
         // Display (and initialize) relative generated time
