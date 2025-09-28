@@ -31,66 +31,6 @@
         <select id="bulkGrade">
             <option value="" disabled selected>Select grade</option>
         </select>
-
-        <label for="bulkDomain">Domain to Generate</label>
-        <select id="bulkDomain">
-            <option value="" selected>All domains</option>
-            <option value="Physical Science">Physical Science</option>
-            <option value="Life Science">Life Science</option>
-            <option value="Earth & Space Science">Earth & Space Science</option>
-            <option value="Engineering & Tech">Engineering & Tech</option>
-        </select>
-
-        <label for="bulkLesson">Lesson Code</label>
-        <select id="bulkLesson" disabled>
-            <option value="" disabled selected>Select code</option>
-        </select>
-
-        <label for="bulkWorksheetType">Worksheet Type</label>
-        <select id="bulkWorksheetType">
-            <option value="Reading Comprehension" selected>Reading Comprehension</option>
-            <option value="True Or False with Passage">True Or False with Passage</option>
-            <option value="Test Paper">Test Paper</option>
-        </select>
-
-    <div class="button-row column">
-            <button class="btn-doc" id="btnBulkDocs" onclick="bulkGenerateDocs()">
-                <span class="btn-label">Generate</span>
-                <div class="spinner" id="spinnerBulk"></div>
-            </button>
-            <button class="btn-package hidden" id="btnStopBulk" onclick="stopBulkGenerate()" disabled>
-                <span class="btn-label">Stop Generate</span>
-            </button>
-        </div>
-                <div class="version-badge">
-                    V.1.1.6
-                </div>
-    </div>
-    <!-- Application Header -->
-    <header class="app-header" id="appHeader">
-        <div class="header-left">
-            <a href="#" class="header-logo">Worksheet Generator</a>
-        </div>
-        
-        <div class="header-right">
-            <div class="earnings-display" id="earningsDisplay">
-                <span id="earningsAmount">LKR 0.00</span>
-            </div>
-            
-            <div class="user-profile">
-                <button class="profile-button" id="profileButton">
-                    <div class="profile-avatar" id="profileAvatar">U</div>
-                    <div class="profile-info">
-                        <div class="profile-username" id="profileUsername">Username</div>
-                        <div class="profile-account" id="profileAccount">Account Name</div>
-                    </div>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M7 10l5 5 5-5z"/>
-                    </svg>
-                </button>
-                
-                <div class="profile-dropdown" id="profileDropdown">
-                    <div class="dropdown-header">
                         <div class="dropdown-username" id="dropdownUsername">Username</div>
                         <div class="dropdown-account" id="dropdownAccount">Account Name</div>
                     </div>
@@ -488,7 +428,7 @@ function showMainApp() {
 }
 
 // Function to populate subjects and standards dropdowns
-function populateSubjects() {
+async function populateSubjects() {
   const subjectDropdown  = document.getElementById('bulkSubject');
   const standardDropdown = document.getElementById('bulkStandard');
   const gradeDropdown    = document.getElementById('bulkGrade');
@@ -539,26 +479,26 @@ function populateSubjects() {
   standardDropdown.disabled = true; gradeDropdown.disabled = true;
   domainDropdown.disabled   = true; lessonDropdown.disabled = true;
 
-    // ① Load Subjects
-  google.script.run
-    .withSuccessHandler(subjects => {
-      subjects.forEach(s => {
-        const o = document.createElement('option');
-        o.value = s; o.textContent = s;
-        subjectDropdown.appendChild(o);
-      });
+        // ① Load Subjects via API proxy
+        try {
+            const subjects = await api('getSubjects');
+            (subjects || []).forEach(s => {
+                const o = document.createElement('option');
+                o.value = s; o.textContent = s;
+                subjectDropdown.appendChild(o);
+            });
             // Restore last chosen subject and cascade — only if user hasn't interacted yet
             const savedSubject = localStorage.getItem('sel_subject');
             if (!window._bulkUserInteracted && savedSubject && [...subjectDropdown.options].some(o => o.value === savedSubject)) {
                 subjectDropdown.value = savedSubject;
                 subjectDropdown.dispatchEvent(new Event('change'));
             }
-    })
-    .withFailureHandler(err => console.error('Failed to load subjects', err))
-    .getSubjects();
+        } catch (err) {
+            console.error('Failed to load subjects', err);
+        }
 
   // ② When Subject changes → load filtered Standards
-  subjectDropdown.addEventListener('change', function () {
+    subjectDropdown.addEventListener('change', async function () {
     localStorage.setItem('sel_subject', this.value);
     const subj = this.value;
     if (typeof loadPrevious === 'function') loadPrevious();
@@ -572,33 +512,30 @@ function populateSubjects() {
         // Disable all selects while standards are loading (including the one just changed)
         setSelectsDisabledExcept([], true);
         standardDropdown.disabled = true;
-    google.script.run
-      .withSuccessHandler(standards => {
-        standards.forEach(st => {
-          const o = document.createElement('option');
-          o.value = o.textContent = st;
-          standardDropdown.appendChild(o);
-        });
-                // Restore last chosen standard and cascade — only if user hasn't interacted yet
-                const savedStandard = localStorage.getItem('sel_standard');
-                if (!window._bulkUserInteracted && savedStandard && [...standardDropdown.options].some(o => o.value === savedStandard)) {
-                    standardDropdown.value = savedStandard;
-                    standardDropdown.dispatchEvent(new Event('change'));
-                }
-                standardDropdown.disabled = standards.length === 0;
-                // Re-enable selects once standards finished loading. Individual downstream logic will re-disable where needed.
-                setSelectsDisabledExcept([], false);
-      })
-      .withFailureHandler(err => {
-        console.error('Failed to load standards', err);
-                standardDropdown.disabled = true;
-                setSelectsDisabledExcept([], false);
-      })
-      .getStandardsForSubject(subj);
+        try {
+            const standards = await api('getStandardsForSubject', { subject: subj });
+            (standards || []).forEach(st => {
+                const o = document.createElement('option');
+                o.value = o.textContent = st;
+                standardDropdown.appendChild(o);
+            });
+            // Restore last chosen standard and cascade — only if user hasn't interacted yet
+            const savedStandard = localStorage.getItem('sel_standard');
+            if (!window._bulkUserInteracted && savedStandard && [...standardDropdown.options].some(o => o.value === savedStandard)) {
+                standardDropdown.value = savedStandard;
+                standardDropdown.dispatchEvent(new Event('change'));
+            }
+            standardDropdown.disabled = (standards || []).length === 0;
+            setSelectsDisabledExcept([], false);
+        } catch (err) {
+            console.error('Failed to load standards', err);
+            standardDropdown.disabled = true;
+            setSelectsDisabledExcept([], false);
+        }
   });
 
   // When Standard changes → load filtered Grades
-  standardDropdown.addEventListener('change', function () {
+    standardDropdown.addEventListener('change', async function () {
     localStorage.setItem('sel_standard', this.value);
     const standard = this.value;
     if (typeof loadPrevious === 'function') loadPrevious();
@@ -617,33 +554,29 @@ function populateSubjects() {
         // Disable all selects while grades are loading (including the one just changed)
         setSelectsDisabledExcept([], true);
         gradeDropdown.disabled = true;
-    google.script.run
-      .withSuccessHandler(grades => {
-        grades.forEach(g => {
-          const o = document.createElement('option');
-          o.value = o.textContent = g;
-          gradeDropdown.appendChild(o);
-        });
-                // Restore last chosen grade (gradeLevel) and cascade — only if user hasn't interacted yet
-                const savedGrade = localStorage.getItem('gradeLevel');
-                if (!window._bulkUserInteracted && savedGrade && [...gradeDropdown.options].some(o => o.value === savedGrade)) {
-                    gradeDropdown.value = savedGrade;
-                    gradeDropdown.dispatchEvent(new Event('change'));
-                }
-                gradeDropdown.disabled = grades.length === 0;
-                // Re-enable selects after grades loaded
-                setSelectsDisabledExcept([], false);
-      })
-      .withFailureHandler(err => {
-        console.error('Failed to load grades', err);
-                gradeDropdown.disabled = true;
-                setSelectsDisabledExcept([], false);
-      })
-      .getGradesForSubjectAndStandard(subject, standard);
+        try {
+            const grades = await api('getGradesForSubjectAndStandard', { subject, standard });
+            (grades || []).forEach(g => {
+                const o = document.createElement('option');
+                o.value = o.textContent = g;
+                gradeDropdown.appendChild(o);
+            });
+            const savedGrade = localStorage.getItem('gradeLevel');
+            if (!window._bulkUserInteracted && savedGrade && [...gradeDropdown.options].some(o => o.value === savedGrade)) {
+                gradeDropdown.value = savedGrade;
+                gradeDropdown.dispatchEvent(new Event('change'));
+            }
+            gradeDropdown.disabled = (grades || []).length === 0;
+            setSelectsDisabledExcept([], false);
+        } catch (err) {
+            console.error('Failed to load grades', err);
+            gradeDropdown.disabled = true;
+            setSelectsDisabledExcept([], false);
+        }
   });
 
   // When Grade changes → load filtered Domains
-  gradeDropdown.addEventListener('change', function () {
+    gradeDropdown.addEventListener('change', async function () {
     localStorage.setItem('gradeLevel', this.value);
 
     // ✅ Add this line so the table rebuilds for the new grade
@@ -665,30 +598,26 @@ function populateSubjects() {
         // Disable all selects while domains are loading (including the one just changed)
         setSelectsDisabledExcept([], true);
         domainDropdown.disabled = true;
-    google.script.run
-      .withSuccessHandler(domains => {
-        domains.forEach(dom => {
-          const o = document.createElement('option');
-          o.value = o.textContent = dom;
-          domainDropdown.appendChild(o);
-        });
-                // Restore last chosen domain and (optionally) refresh table — only if user hasn't interacted yet
-                const savedDomain = localStorage.getItem('sel_domain');
-                if (!window._bulkUserInteracted && savedDomain && [...domainDropdown.options].some(o => o.value === savedDomain)) {
-                    domainDropdown.value = savedDomain;
-                    domainDropdown.dispatchEvent(new Event('change'));
-                    if (typeof loadPrevious === 'function') loadPrevious();
-                }
-                domainDropdown.disabled = domains.length === 0;
-                // Re-enable selects after domains loaded
-                setSelectsDisabledExcept([], false);
-      })
-      .withFailureHandler(err => {
-        console.error('Failed to load domains', err);
-                domainDropdown.disabled = true;
-                setSelectsDisabledExcept([], false);
-      })
-      .getDomainsForSubjectStandardGrade(subject, standard, grade);
+        try {
+            const domains = await api('getDomainsForSubjectStandardGrade', { subject, standard, grade });
+            (domains || []).forEach(dom => {
+                const o = document.createElement('option');
+                o.value = o.textContent = dom;
+                domainDropdown.appendChild(o);
+            });
+            const savedDomain = localStorage.getItem('sel_domain');
+            if (!window._bulkUserInteracted && savedDomain && [...domainDropdown.options].some(o => o.value === savedDomain)) {
+                domainDropdown.value = savedDomain;
+                domainDropdown.dispatchEvent(new Event('change'));
+                if (typeof loadPrevious === 'function') loadPrevious();
+            }
+            domainDropdown.disabled = (domains || []).length === 0;
+            setSelectsDisabledExcept([], false);
+        } catch (err) {
+            console.error('Failed to load domains', err);
+            domainDropdown.disabled = true;
+            setSelectsDisabledExcept([], false);
+        }
   });
 
 }
@@ -810,31 +739,34 @@ function onDomainDoneClick(ev) {
     btn.disabled = true;
     btn.classList.add('btn-pulsing');
 
-    google.script.run.withSuccessHandler(function(res) {
-        btn.classList.remove('btn-pulsing');
-        btn.disabled = false;
-        if (res && res.success) {
-            // Flip to Completed appearance
-            btn.textContent = 'COMPLETED';
-            btn.classList.remove('btn-done');
-            btn.classList.add('btn-completed');
-            btn.dataset.lessonKey = res.lessonKey || '';
-            btn.dataset.instructionsUrl = res.instructionsUrl || '';
-            // When clicking Completed, open the instructions folder
-            btn.removeEventListener('click', onDomainDoneClick);
-            btn.addEventListener('click', function openInstr(e) {
-                e.preventDefault();
-                const url = btn.dataset.instructionsUrl || '';
-                if (url) window.open(url, '_blank');
-            });
-        } else {
-            alert('Failed to finalize bundle: ' + (res && res.error ? res.error : 'Unknown error'));
+    (async () => {
+        try {
+            const res = await api('finalizeDomainBundleRow', { subject, grade, domainName, worksheetType, bundleName, extra: '' });
+            btn.classList.remove('btn-pulsing');
+            btn.disabled = false;
+            if (res && res.success) {
+                // Flip to Completed appearance
+                btn.textContent = 'COMPLETED';
+                btn.classList.remove('btn-done');
+                btn.classList.add('btn-completed');
+                btn.dataset.lessonKey = res.lessonKey || '';
+                btn.dataset.instructionsUrl = res.instructionsUrl || '';
+                // When clicking Completed, open the instructions folder
+                btn.removeEventListener('click', onDomainDoneClick);
+                btn.addEventListener('click', function openInstr(e) {
+                    e.preventDefault();
+                    const url = btn.dataset.instructionsUrl || '';
+                    if (url) window.open(url, '_blank');
+                });
+            } else {
+                alert('Failed to finalize bundle: ' + (res && res.error ? res.error : 'Unknown error'));
+            }
+        } catch (err) {
+            btn.classList.remove('btn-pulsing');
+            btn.disabled = false;
+            alert('Could not finalize bundle: ' + (err && err.message ? err.message : err));
         }
-    }).withFailureHandler(function(err) {
-        btn.classList.remove('btn-pulsing');
-        btn.disabled = false;
-        alert('Could not finalize bundle: ' + (err && err.message ? err.message : err));
-    }).finalizeDomainBundleRow(subject, grade, domainName, worksheetType, bundleName, '');
+    })();
 }
 
 function renderSharedHeader(){
@@ -866,68 +798,50 @@ function onDomainCollageClick(ev) {
     const domainName = btn.dataset.domain || '';
     const { subject, standard, grade, worksheetType } = getFiltersSafe();
 
-    if (!(window.google && google && google.script && google.script.run)) {
-        return alert('Not available in this environment.');
-    }
-
     // Keep the button disabled/blinking for the whole flow: generate description -> copy -> download & render collage
     btn.disabled = true;
     btn.classList.add('blinking-ui');
 
-    // Reuse the server-side generator: first fetch lessons state and generate the AI description, copy it to clipboard.
-    const generateAndCopyDescription = () => new Promise((resolve, reject) => {
+    // Reuse the server-side generator via API: first fetch lessons state and generate the AI description, copy it to clipboard.
+    const generateAndCopyDescription = async () => {
         const codes = (window.domainCodesMap && window.domainCodesMap[domainName]) || [];
-        if (!codes.length) return resolve(null); // nothing to copy, proceed
-
-        google.script.run
-            .withSuccessHandler((lessonsState) => {
-                google.script.run
-                    .withSuccessHandler((aiText) => {
-                        try {
-                            if (aiText) {
-                                if (navigator.clipboard?.writeText) {
-                                    navigator.clipboard.writeText(aiText).then(() => resolve(aiText), () => resolve(aiText));
-                                } else {
-                                    const ta = document.createElement('textarea'); ta.value = aiText; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta);
-                                    resolve(aiText);
-                                }
-                            } else {
-                                resolve(null);
-                            }
-                        } catch (e) { resolve(null); }
-                    })
-                    .withFailureHandler((err) => { resolve(null); })
-                    .generateBundleDescriptionFromPrompt(subject, standard, grade, domainName, codes, lessonsState);
-            })
-            .withFailureHandler((err) => { resolve(null); })
-            .getLessonsWithState();
-    });
+        if (!codes.length) return null;
+        try {
+            const lessonsState = await api('getLessonsWithState');
+            const aiText = await api('generateBundleDescriptionFromPrompt', { subject, standard, grade, domainName, codes, lessonsState });
+            if (aiText) {
+                try {
+                    if (navigator.clipboard?.writeText) {
+                        await navigator.clipboard.writeText(aiText);
+                    } else {
+                        const ta = document.createElement('textarea'); ta.value = aiText; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta);
+                    }
+                } catch (e) { /* ignore clipboard errors */ }
+                return aiText;
+            }
+            return null;
+        } catch (e) {
+            return null;
+        }
+    };
 
     // Execute: generate+copy first, then download images and render the collage.
-    generateAndCopyDescription().finally(() => {
-        google.script.run
-            .withSuccessHandler((list) => {
-                try {
-                    window.renderDomainCollageFromBase64List({
-                        images: list,
-                        domain: domainName,
-                        subject, standard, grade,
-                        worksheetType
-                    });
-                } catch (e) {
-                    alert('Failed to create collage: ' + (e && e.message ? e.message : e));
-                } finally {
-                    btn.disabled = false;
-                    btn.classList.remove('blinking-ui');
-                }
-            })
-            .withFailureHandler((err) => {
-                btn.disabled = false;
-                btn.classList.remove('blinking-ui');
-                alert(err?.message || 'Failed to prepare collage');
-            })
-            .downloadDomainJpegsListBase64(subject, grade, domainName, worksheetType, standard);
-    });
+    (async () => {
+        try {
+            await generateAndCopyDescription();
+            const list = await api('downloadDomainJpegsListBase64', { subject, grade, domainName, worksheetType, standard });
+            try {
+                window.renderDomainCollageFromBase64List({ images: list, domain: domainName, subject, standard, grade, worksheetType });
+            } catch (e) {
+                alert('Failed to create collage: ' + (e && e.message ? e.message : e));
+            }
+        } catch (err) {
+            alert(err?.message || 'Failed to prepare collage');
+        } finally {
+            btn.disabled = false;
+            btn.classList.remove('blinking-ui');
+        }
+    })();
 }
 
 // Handler: copy TPT description for domain using AI generator
@@ -948,42 +862,33 @@ function onDomainCopyClick(ev) {
     btn.classList.add('blinking-ui');
 
     // 1) get lessonsState
-    google.script.run
-        .withSuccessHandler((lessonsState) => {
-            // 2) ask server to produce AI text
-            google.script.run
-                .withSuccessHandler((aiText) => {
-                    try {
-                        if (!aiText) { alert('No AI output returned'); return; }
-                        if (navigator.clipboard?.writeText) {
-                            navigator.clipboard.writeText(aiText);
-                        } else {
-                            const ta = document.createElement('textarea');
-                            ta.value = aiText;
-                            document.body.appendChild(ta);
-                            ta.select(); try { document.execCommand('copy'); } catch (e) {}
-                            document.body.removeChild(ta);
-                        }
-                        btn.title = 'Copied';
-                        setTimeout(() => { btn.title = 'Copy TPT description (AI)'; }, 1200);
-                    } finally {
-                        btn.disabled = false;
-                        btn.classList.remove('blinking-ui');
-                    }
-                })
-                .withFailureHandler((err) => {
-                    btn.disabled = false;
-                    btn.classList.remove('blinking-ui');
-                    alert(err?.message || 'Failed to generate AI text');
-                })
-                .generateBundleDescriptionFromPrompt(subject, standard, grade, domainName, codes, lessonsState);
-        })
-        .withFailureHandler((err) => {
+    (async () => {
+        try {
+            const lessonsState = await api('getLessonsWithState');
+            const aiText = await api('generateBundleDescriptionFromPrompt', { subject, standard, grade, domainName, codes, lessonsState });
+            try {
+                if (!aiText) { alert('No AI output returned'); return; }
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(aiText);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = aiText;
+                    document.body.appendChild(ta);
+                    ta.select(); try { document.execCommand('copy'); } catch (e) {}
+                    document.body.removeChild(ta);
+                }
+                btn.title = 'Copied';
+                setTimeout(() => { btn.title = 'Copy TPT description (AI)'; }, 1200);
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('blinking-ui');
+            }
+        } catch (err) {
             btn.disabled = false;
             btn.classList.remove('blinking-ui');
-            alert(err?.message || 'Could not load lessons state');
-        })
-        .getLessonsWithState();
+            alert(err?.message || 'Failed to generate AI text or load lessons state');
+        }
+    })();
 }
 
 /*
@@ -1124,11 +1029,8 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
 
         // try to draw optional background from server
         try {
-            const bgB64 = await new Promise((res) => {
-                try {
-                    google.script.run.withSuccessHandler(res).withFailureHandler(() => res(null)).getAIBgBase64();
-                } catch (e) { res(null); }
-            });
+            let bgB64 = null;
+            try { bgB64 = await api('getAIBgBase64'); } catch (e) { bgB64 = null; }
             if (bgB64) {
                 await new Promise((res) => {
                     const bg = new Image();
@@ -1284,27 +1186,20 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
         // If the server call fails, we fall back to direct download so user isn't blocked.
         try {
             const fileNameHint = (domain || 'domain') + '_COLLAGE';
-            google.script.run.withSuccessHandler(function(res) {
-                // On success or partial success, still trigger local download so user gets the file.
-                const a = document.createElement('a');
-                a.href = dataUrl;
-                const safeDomain = (domain || 'domain').replace(/[^A-Za-z0-9]+/g, '_');
-                a.download = safeDomain + '-COLLAGE.jpg';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            }).withFailureHandler(function(err) {
-                // Failure — fallback to direct download
-                const a = document.createElement('a');
-                a.href = dataUrl;
-                const safeDomain = (domain || 'domain').replace(/[^A-Za-z0-9]+/g, '_');
-                a.download = safeDomain + '-COLLAGE.jpg';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            }).saveDomainThumbnailToInstructions(dataUrl, subject, grade, standard || domain, fileNameHint);
+            try {
+                await api('saveDomainThumbnailToInstructions', { dataUrl, subject, grade, folder: standard || domain, fileNameHint });
+            } catch (e) {
+                // ignore server error and fall back to download
+            }
+            // Trigger local download regardless
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            const safeDomain = (domain || 'domain').replace(/[^A-Za-z0-9]+/g, '_');
+            a.download = safeDomain + '-COLLAGE.jpg';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
         } catch (e) {
-            // If google.script.run isn't available or another client error occurs, fallback to direct download
             const a = document.createElement('a');
             a.href = dataUrl;
             const safeDomain = (domain || 'domain').replace(/[^A-Za-z0-9]+/g, '_');
@@ -1357,29 +1252,25 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             payoutForm.classList.remove('hidden');
         }
 
-        payoutMethodButton.addEventListener('click', () => {
-            // Load existing payout details
-            google.script.run
-                .withSuccessHandler(details => {
-                    if (details && (details.bank || details.branch || details.accountNumber || details.accountName)) {
-                        // Show view mode with existing details
-                        document.getElementById('viewBank').textContent = details.bank || '-';
-                        document.getElementById('viewBranch').textContent = details.branch || '-';
-                        document.getElementById('viewAccountNumber').textContent = details.accountNumber || '-';
-                        document.getElementById('viewAccountName').textContent = details.accountName || '-';
-                        showPayoutView();
-                    } else {
-                        // No details exist, show form for adding
-                        payoutForm.reset();
-                        showPayoutForm();
-                    }
-                    payoutModal.style.display = 'flex';
-                    profileDropdown.classList.remove('show'); // Close dropdown
-                })
-                .withFailureHandler(err => {
-                    showMessage('Failed to load payout details: ' + err.message, 'error');
-                })
-                .getPayoutDetails(currentUser.username);
+        payoutMethodButton.addEventListener('click', async () => {
+            // Load existing payout details via API
+            try {
+                const details = await api('getPayoutDetails', { username: currentUser.username });
+                if (details && (details.bank || details.branch || details.accountNumber || details.accountName)) {
+                    document.getElementById('viewBank').textContent = details.bank || '-';
+                    document.getElementById('viewBranch').textContent = details.branch || '-';
+                    document.getElementById('viewAccountNumber').textContent = details.accountNumber || '-';
+                    document.getElementById('viewAccountName').textContent = details.accountName || '-';
+                    showPayoutView();
+                } else {
+                    payoutForm.reset();
+                    showPayoutForm();
+                }
+                payoutModal.style.display = 'flex';
+                profileDropdown.classList.remove('show'); // Close dropdown
+            } catch (err) {
+                showMessage('Failed to load payout details: ' + (err && err.message ? err.message : err), 'error');
+            }
         });
 
         payoutEditBtn.addEventListener('click', () => {
@@ -1400,7 +1291,7 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             showPayoutView();
         });
 
-        payoutForm.addEventListener('submit', (e) => {
+    payoutForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(payoutForm);
             const bank = formData.get('bank').trim();
@@ -1408,28 +1299,22 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             const accountNumber = formData.get('accountNumber').trim();
             const accountName = formData.get('accountName').trim();
 
-            google.script.run
-                .withSuccessHandler(success => {
-                    if (success) {
-                        showMessage('Payout details saved successfully!', 'success');
-                        // Update view with new values
-                        document.getElementById('viewBank').textContent = bank || '-';
-                        document.getElementById('viewBranch').textContent = branch || '-';
-                        document.getElementById('viewAccountNumber').textContent = accountNumber || '-';
-                        document.getElementById('viewAccountName').textContent = accountName || '-';
-                        showPayoutView();
-                        // Close modal after showing success message
-                        setTimeout(() => {
-                            payoutModal.style.display = 'none';
-                        }, 1500);
-                    } else {
-                        showMessage('Failed to save payout details.', 'error');
-                    }
-                })
-                .withFailureHandler(err => {
-                    showMessage('Failed to save payout details: ' + err.message, 'error');
-                })
-                .updatePayoutDetails(currentUser.username, bank, branch, accountNumber, accountName);
+            try {
+                const success = await api('updatePayoutDetails', { username: currentUser.username, bank, branch, accountNumber, accountName });
+                if (success) {
+                    showMessage('Payout details saved successfully!', 'success');
+                    document.getElementById('viewBank').textContent = bank || '-';
+                    document.getElementById('viewBranch').textContent = branch || '-';
+                    document.getElementById('viewAccountNumber').textContent = accountNumber || '-';
+                    document.getElementById('viewAccountName').textContent = accountName || '-';
+                    showPayoutView();
+                    setTimeout(() => { payoutModal.style.display = 'none'; }, 1500);
+                } else {
+                    showMessage('Failed to save payout details.', 'error');
+                }
+            } catch (err) {
+                showMessage('Failed to save payout details: ' + (err && err.message ? err.message : err), 'error');
+            }
         });
 
                 // Prompt submenu (Lesson & Bundle) buttons (copy to clipboard)
@@ -1540,10 +1425,16 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                         // Blink the item while waiting for server
                             try { btn.classList.add('blinking-ui'); } catch (err) {}
                             // Use the same feedback UI as other buttons by passing the element
-                            google.script.run
-                                .withSuccessHandler(text => { try { btn.classList.remove('blinking-ui'); } catch (err) {} ; copyTextToClipboard(text, btn); })
-                                .withFailureHandler(err => { try { btn.classList.remove('blinking-ui'); } catch (err) {} ; showMessage('Failed to fetch lesson prompt: ' + (err && err.message), 'error'); })
-                                .getTutorialPrompt('lesson');
+                            (async () => {
+                                try {
+                                    const text = await api('getTutorialPrompt', { type: 'lesson' });
+                                    try { btn.classList.remove('blinking-ui'); } catch (err) {}
+                                    copyTextToClipboard(text, btn);
+                                } catch (err) {
+                                    try { btn.classList.remove('blinking-ui'); } catch (e) {}
+                                    showMessage('Failed to fetch lesson prompt: ' + (err && err.message), 'error');
+                                }
+                            })();
                     });
                     lessonPromptSub.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); lessonPromptSub.click(); } });
                 }
@@ -1554,10 +1445,16 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                         const btn = e.currentTarget;
                         // Blink the item while waiting for server
                         try { btn.classList.add('blinking-ui'); } catch (err) {}
-                        google.script.run
-                            .withSuccessHandler(text => { try { btn.classList.remove('blinking-ui'); } catch (err) {} ; copyTextToClipboard(text, btn); })
-                            .withFailureHandler(err => { try { btn.classList.remove('blinking-ui'); } catch (err) {} ; showMessage('Failed to fetch bundle prompt: ' + (err && err.message), 'error'); })
-                            .getTutorialPrompt('bundle');
+                        (async () => {
+                            try {
+                                const text = await api('getTutorialPrompt', { type: 'bundle' });
+                                try { btn.classList.remove('blinking-ui'); } catch (err) {}
+                                copyTextToClipboard(text, btn);
+                            } catch (err) {
+                                try { btn.classList.remove('blinking-ui'); } catch (e) {}
+                                showMessage('Failed to fetch bundle prompt: ' + (err && err.message), 'error');
+                            }
+                        })();
                     });
                     bundlePromptSub.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bundlePromptSub.click(); } });
                 }
@@ -1604,17 +1501,17 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                                     if (parentItem) parentItem.classList.add('blinking-ui');
                                     // show loading state text (spinner is hidden by CSS)
                                     if (tutorialsSubmenu) tutorialsSubmenu.innerHTML = '<div class="tutorial-loading">Loading...</div>';
-                                    google.script.run
-                                        .withSuccessHandler(items => {
+                                    (async () => {
+                                        try {
+                                            const items = await api('getTutorials');
                                             if (parentItem) parentItem.classList.remove('blinking-ui');
                                             renderTutorials(items);
-                                        })
-                                        .withFailureHandler(err => {
+                                        } catch (err) {
                                             if (parentItem) parentItem.classList.remove('blinking-ui');
                                             console.error('Failed to load tutorials:', err);
                                             renderTutorials([]);
-                                        })
-                                        .getTutorials();
+                                        }
+                                    })();
                                 }
                 // hoisted helpers so both parent item and submenu can call them
                 function showTutorials() {
@@ -1649,12 +1546,17 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
         // Open or create the TEMPLATES folder
         const templateButton = document.getElementById('templateButton');
         if (templateButton) {
-          templateButton.addEventListener('click', e => {
-            e.stopPropagation();
-            google.script.run
-              .withSuccessHandler(url => window.open(url, '_blank'))
-              .getOrCreateTemplatesFolder();
-          });
+                    templateButton.addEventListener('click', e => {
+                        e.stopPropagation();
+                        (async () => {
+                                try {
+                                        const url = await api('getOrCreateTemplatesFolder');
+                                        if (url) window.open(url, '_blank');
+                                } catch (err) {
+                                        showMessage('Failed to open templates folder: ' + (err && err.message ? err.message : err), 'error');
+                                }
+                        })();
+                    });
         }
         
         function logout() {
@@ -1687,18 +1589,16 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             setLoading(true, 'Verifying credentials...');
             
             try {
-                // Call Google Apps Script function to authenticate
-                google.script.run
-                    .withSuccessHandler(handleLoginSuccess)
-                    .withFailureHandler(handleLoginError)
-                    .authenticateUser(username, password);
+                // Call backend via proxy to authenticate
+                const result = await api('authenticateUser', { username, password });
+                handleLoginSuccess(result);
             } catch (error) {
                 setLoading(false);
-                showMessage('An error occurred. Please try again.');
+                handleLoginError(error);
             }
         });
         
-        function handleLoginSuccess(result) {
+        async function handleLoginSuccess(result) {
             if (result.success) {
                 setLoading(true, 'Checking email authorization...');
                 
@@ -1706,10 +1606,12 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                 currentUser.username = document.getElementById('username').value.trim();
                 
                 // Check if user's email is authorized and get account name
-                google.script.run
-                    .withSuccessHandler(handleEmailCheck)
-                    .withFailureHandler(handleEmailCheckError)
-                    .checkEmailAuthorization();
+                try {
+                    const emailRes = await api('checkEmailAuthorization', {});
+                    await handleEmailCheck(emailRes);
+                } catch (err) {
+                    handleEmailCheckError(err);
+                }
             } else {
                 setLoading(false);
                 showMessage(result.message || 'Invalid username or password.');
@@ -1721,16 +1623,18 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             showMessage('Login failed: ' + (error.message || 'Please try again.'));
         }
         
-        function handleEmailCheck(result) {
+        async function handleEmailCheck(result) {
             if (result.authorized) {
                 currentUser.email = result.email || '';
                 setLoading(true, 'Loading user account...');
                 
                 // Get user account name from data sheet
-                google.script.run
-                    .withSuccessHandler(handleAccountData)
-                    .withFailureHandler(handleAccountDataError)
-                    .getUserAccount();
+                try {
+                    const acct = await api('getUserAccount', {});
+                    handleAccountData(acct);
+                } catch (err) {
+                    handleAccountDataError(err);
+                }
             } else {
                 setLoading(false);
                 showMessage('Access denied. Your email is not authorized to use this application.');
@@ -1790,7 +1694,7 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
         }
 
         // Function to check for existing session on page load
-        function checkSession() {
+        async function checkSession() {
             const storedSession = localStorage.getItem(LOCAL_STORAGE_KEY);
             if (storedSession) {
                 const sessionData = JSON.parse(storedSession);
@@ -1800,25 +1704,23 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
 
                 // Verify the session with the server (optional but good for security)
                 setLoading(true, "Resuming session...");
-                google.script.run
-                    .withSuccessHandler(function(result) {
-                        if (result.authorized) {
-                            updateUserProfile(currentUser);
-                            showMainApp();
-                            setLoading(false);
-                        } else {
-                            logout(); // Session invalid, force re-login
-                            setLoading(false);
-                            showMessage("Session expired or invalid. Please log in again.");
-                        }
-                    })
-                    .withFailureHandler(function(error) {
-                        logout(); // Error during session verification, force re-login
+                try {
+                    const result = await api('checkEmailAuthorization', {});
+                    if (result.authorized) {
+                        updateUserProfile(currentUser);
+                        showMainApp();
                         setLoading(false);
-                        showMessage("Error resuming session. Please log in again.");
-                        console.error("Session verification failed:", error);
-                    })
-                    .checkEmailAuthorization(); // Re-use this function to verify email
+                    } else {
+                        logout(); // Session invalid, force re-login
+                        setLoading(false);
+                        showMessage("Session expired or invalid. Please log in again.");
+                    }
+                } catch (error) {
+                    logout(); // Error during session verification, force re-login
+                    setLoading(false);
+                    showMessage("Error resuming session. Please log in again.");
+                    console.error("Session verification failed:", error);
+                }
             } else {
                 // No stored session, show login form
                 setLoading(false);
@@ -1827,7 +1729,7 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
 
         // Call checkSession on page load - with guard to prevent duplicate bindings
         if (!window.__CHECK_SESSION_BOUND__) {
-            document.addEventListener("DOMContentLoaded", checkSession);
+            document.addEventListener("DOMContentLoaded", () => { checkSession(); });
             window.__CHECK_SESSION_BOUND__ = true;
         }
 
@@ -2097,25 +1999,21 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                     // Check original lesson folder name before action
                     const packageUrlDone = lessonUrls[buttonKey]?.packageUrl;
                     if (packageUrlDone) {
-                        google.script.run
-                            .withSuccessHandler(folderName => {
-                                if (folderName.includes("Listed on TpT - Do Not Delete")) {
-                                    // Mark as COMPLETED
+                        (async () => {
+                            try {
+                                const folderName = await api('getFolderNameByUrl', { url: packageUrlDone });
+                                if (folderName && String(folderName).includes("Listed on TpT - Do Not Delete")) {
                                     updateLessonStatusInSheet(buttonKey, 'completed');
                                 } else {
-                                    // Open Instructions folder as before
                                     const instructionsUrl = lessonUrls[buttonKey]?.instructionsUrl;
-                                    if (instructionsUrl) {
-                                        window.open(instructionsUrl, '_blank');
-                                    }
+                                    if (instructionsUrl) window.open(instructionsUrl, '_blank');
                                     updateLessonStatusInSheet(buttonKey, 'done');
                                 }
-                            })
-                            .withFailureHandler(err => {
+                            } catch (err) {
                                 console.error('Error fetching folder name:', err);
-                                alert('Error fetching folder name: ' + err.message);
-                            })
-                            .getFolderNameByUrl(packageUrlDone);
+                                alert('Error fetching folder name: ' + (err && err.message ? err.message : err));
+                            }
+                        })();
                     }
                     break;
                     
@@ -2141,13 +2039,12 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             const uploaderUserName = document.getElementById('profileUsername').textContent.trim();
             const userEmail        = currentUser.email || '';
 
-            google.script.run
-                .withSuccessHandler(() => {
+            (async () => {
+                try {
+                    await api('updateLessonStatusExact', { grade, lessonCode, worksheetType, userEmail, newStatus, uploaderUserName });
                     // Update local UI state exactly as before
                     packageButtonStates[lessonKey] = newStatus;
                     updatePackageButtonState(lessonKey, newStatus);
-                    // Bundle panel no longer uses tick logic when lesson status changes
-
                     // Fire event for bundle panel to update instantly
                     window.dispatchEvent(new CustomEvent('lesson-status-updated', {
                         detail: {
@@ -2158,20 +2055,11 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                             newStatus
                         }
                     }));
-                })
-                .withFailureHandler(err => {
+                } catch (err) {
                     console.error('Failed to update lesson status:', err);
-                    alert('Failed to update lesson status: ' + err.message);
-                })
-                // New composite‑key status updater
-                .updateLessonStatusExact(
-                    grade,
-                    lessonCode,
-                    worksheetType,
-                    userEmail,
-                    newStatus,
-                    uploaderUserName
-                );
+                    alert('Failed to update lesson status: ' + (err && err.message ? err.message : err));
+                }
+            })();
         }
 
         /**
@@ -2257,29 +2145,22 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             if (spin) spin.style.display = 'block';
             const originalText = btn ? btn.textContent : '';
             
-            google.script.run
-                .withSuccessHandler(({ packageUrl, instructionsUrl }) => {
+            (async () => {
+                try {
+                    const resp = await api(serverFn, { grade: g, code, overwrite, userName, standard, worksheetType });
+                    const packageUrl = resp && resp.packageUrl;
+                    const instructionsUrl = resp && resp.instructionsUrl;
                     if (spin) spin.style.display = 'none';
                     if (btn) {
                         btn.classList.remove("btn-pulsing");
                         btn.disabled = false;
                     }
-                    
-                    // Store the package URL and instructions URL and update button state to CHECK
                     const buttonKey = `${g}_${code}`;
-                    if (!lessonUrls[buttonKey]) {
-                        lessonUrls[buttonKey] = {};
-                    }
+                    if (!lessonUrls[buttonKey]) lessonUrls[buttonKey] = {};
                     lessonUrls[buttonKey].packageUrl = packageUrl;
                     lessonUrls[buttonKey].instructionsUrl = instructionsUrl;
-                    
-                    // Update state to 'packaged' (which shows as CHECK button)
                     updatePackageButtonState(buttonKey, 'packaged');
-                    
-                    // Refresh total earnings after successful package generation
                     loadTotalEarnings();
-
-                    // Fire event for bundle panel to update instantly
                     window.dispatchEvent(new CustomEvent('lesson-status-updated', {
                         detail: {
                             subject: document.getElementById('subject')?.value || document.getElementById('bulkSubject')?.value,
@@ -2289,37 +2170,21 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                             newStatus: 'packaged'
                         }
                     }));
-                })
-                .withFailureHandler(err => {
+                } catch (err) {
                     if (spin) spin.style.display = 'none';
                     if (btn) {
                         btn.classList.remove('btn-pulsing');
                         btn.disabled = false;
                         btn.textContent = originalText;
                     }
-                    const msg = err.message || '';
-                    // If backend asks overwrite confirmation, show modal
-                    if (msg.includes('Overwrite?')) {
-                        showReplaceModal(msg).then(choice => {
-                            if (choice === 'replace') {
-                                // Retry with overwrite flag - pass worksheetType for the retry
-                                generatePackageForLesson(code, grade, true, userName);
-                            }
-                            // If 'skip', do nothing
-                        });
+                    const msg = err && (err.message || err) || '';
+                    if (String(msg).includes('Overwrite?')) {
+                        showReplaceModal(msg).then(choice => { if (choice === 'replace') generatePackageForLesson(code, grade, true, userName); });
                     } else {
                         alert('Error packaging ' + code + ': ' + msg);
                     }
-                })
-                // Call the appropriate server function
-                [serverFn](
-                    g,
-                    code,
-                    ...(serverFn === 'generatePackageForLesson' ? [worksheetType] : []),
-                    overwrite,
-                    userName,
-                    standard
-                );
+                }
+            })();
         }
 
         /**
@@ -2354,41 +2219,38 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                         const onCodesLoaded = (codes) => {
                             const codesArr = singleCode ? [singleCode] : codes;
                             // Fetch mapping from lesson code => domain so we can render per-domain tables
-                            google.script.run
-                                .withSuccessHandler(domainMap => {
-                                    try {
-                                        processBatch(codesArr, domainMap || {});
-                                    } catch (e) {
-                                        spinnerBulk.style.display = 'none';
-                                        document.getElementById('btnBulkDocs').disabled = false;
-                                        alert('Failed to start batch: ' + (e && e.message));
-                                    }
-                                })
-                                .withFailureHandler(err => {
-                                    // If domain mapping fails, continue with empty map (all will be Ungrouped)
+                            (async () => {
+                                try {
+                                    const domainMap = await api('getLessonDomainMap', { subject, standard, grade });
+                                    try { processBatch(codesArr, domainMap || {}); } catch (e) { spinnerBulk.style.display = 'none'; document.getElementById('btnBulkDocs').disabled = false; alert('Failed to start batch: ' + (e && e.message)); }
+                                } catch (err) {
                                     processBatch(codesArr, {});
-                                })
-                                .getLessonDomainMap(subject, standard, grade);
+                                }
+                            })();
                         };
 
                         if (domainName) {
-                            google.script.run
-                                .withSuccessHandler(codesForDomain => onCodesLoaded(codesForDomain || []))
-                                .withFailureHandler(err => {
+                            (async () => {
+                                try {
+                                    const codesForDomain = await api('getCodesForSubjectStandardGradeDomain', { subject, standard, grade, domain: domainName });
+                                    onCodesLoaded(codesForDomain || []);
+                                } catch (err) {
                                     spinnerBulk.style.display = 'none';
                                     document.getElementById('btnBulkDocs').disabled = false;
-                                    alert('Error loading lesson codes: ' + err.message);
-                                })
-                                .getCodesForSubjectStandardGradeDomain(subject, standard, grade, domainName);
+                                    alert('Error loading lesson codes: ' + (err && err.message ? err.message : err));
+                                }
+                            })();
                         } else {
-                            google.script.run
-                                .withSuccessHandler(codesAll => onCodesLoaded(codesAll || []))
-                                .withFailureHandler(err => {
+                            (async () => {
+                                try {
+                                    const codesAll = await api('getCodesForSubjectStandardGrade', { subject, standard, grade });
+                                    onCodesLoaded(codesAll || []);
+                                } catch (err) {
                                     spinnerBulk.style.display = 'none';
                                     document.getElementById('btnBulkDocs').disabled = false;
-                                    alert('Error loading lesson codes: ' + err.message);
-                                })
-                                .getCodesForSubjectStandardGrade(subject, standard, grade);
+                                    alert('Error loading lesson codes: ' + (err && err.message ? err.message : err));
+                                }
+                            })();
                         }
 
             // Finish helper
@@ -2437,11 +2299,15 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                                                                             : 'deleteLessonResources';
                                 // Use subject value for TF, keep RC unchanged
                                 const subj = document.getElementById('bulkSubject')?.value;
-                                if (deleteFn === 'deleteTrueFalseLessonResourcesWrapper') {
-                                    google.script.run[deleteFn](grade, code, subj);
-                                } else {
-                                    google.script.run[deleteFn](code);
-                                }
+                                (async () => {
+                                    try {
+                                        if (deleteFn === 'deleteTrueFalseLessonResourcesWrapper') {
+                                            await api(deleteFn, { grade, code, subject: subj });
+                                        } else {
+                                            await api(deleteFn, { code });
+                                        }
+                                    } catch (e) { /* ignore deletion failures here */ }
+                                })();
                                 generateWorksheetForCode(code, grade, worksheetType, domainTbody, true);
                             } else {
                                 // Skip this code and continue with the next in batch
@@ -2473,45 +2339,28 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                     // Capture selected subject before calling server
                     const subject = document.getElementById('bulkSubject')?.value;
                     const standard = document.getElementById('bulkStandard')?.value; // Pass explicit standard
-                    google.script.run
-                        .withSuccessHandler(urls => {
+                    (async () => {
+                        try {
+                            const urls = await api(fnName, { grade, code, overwrite, username: currentUser.username, subject, worksheetType, standard });
                             rowEl.classList.remove('blinking');
                             updateTableRow(code, grade, urls);
                             loadTotalEarnings();
-
-                            // Fire event for bundle panel to update instantly after generating new lesson
                             window.dispatchEvent(new CustomEvent('lesson-status-updated', {
-                                detail: {
-                                    subject: document.getElementById('bulkSubject')?.value,
-                                    grade,
-                                    code,
-                                    worksheetType,
-                                    newStatus: 'completed'  // New lessons are marked as completed
-                                }
+                                detail: { subject: document.getElementById('bulkSubject')?.value, grade, code, worksheetType, newStatus: 'completed' }
                             }));
-                            
                             nextInBatch();
-                        })
-                        .withFailureHandler(err => {
+                        } catch (err) {
                             rowEl.classList.remove('blinking');
-                            const msg = err.message || '';
-                            // If backend asks overwrite confirmation, show modal
-                            if (msg.includes('Overwrite?')) {
-                                showReplaceModal(msg).then(choice => {
-                                    if (choice === 'replace') {
-                                        // Retry with overwrite flag
-                                        generateWorksheetForCode(code, grade, worksheetType, tbody, true);
-                                    } else {
-                                        // Skip and continue with next
-                                        nextInBatch();
-                                    }
-                                });
+                            const msg = err && (err.message || err) || '';
+                            if (String(msg).includes('Overwrite?')) {
+                                showReplaceModal(msg).then(choice => { if (choice === 'replace') generateWorksheetForCode(code, grade, worksheetType, tbody, true); else nextInBatch(); });
                             } else {
                                 rowEl.innerHTML = `<td>${grade}</td><td>${code}</td><td colspan="3" class="error-cell">Error: ${msg}</td>
                                     <td class="menu-cell"><button class="btn-package" onclick="regenerateLesson('${code}', '${grade}')">Retry</button></td>`;
                                 nextInBatch();
                             }
-                        })[fnName](grade, code, overwrite, currentUser.username, subject, worksheetType, standard);
+                        }
+                    })();
                 }
                 nextInBatch();
             }
@@ -2524,7 +2373,7 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             stopBulkBtn.disabled = true;
             spinnerBulk.style.display = 'none';
             // Notify server to cancel in-flight operations
-            google.script.run.stopBulkGenerate();
+            (async () => { try { await api('stopBulkGenerate'); } catch (e) { /* ignore */ } })();
             alert('Bulk generation stopped.');
         }
 
@@ -2560,12 +2409,15 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             // Call server to get previous lesson codes and URLs with state
             const isTF = document.getElementById("bulkWorksheetType").value === "True Or False with Passage";
             const fn   = isTF ? "listPreviouslyGeneratedTF" : "listPreviouslyGenerated";
-            google.script.run
-                .withSuccessHandler(previousItems => {
+                        // previous server callback removed; replaced by api() flow below
+            (async () => {
+                try {
+                    const previousItems = await api(fn, {});
                     bulkTableContainer.classList.remove("table-blinking"); // Remove blinking class on success
+
                     // Only display lessons for the current account
                     const currentAccount = currentUser.accountName && currentUser.accountName.trim();
-                    let recentItems = previousItems.filter(item => {
+                    let recentItems = (previousItems || []).filter(item => {
                       return item.accountName && item.accountName.trim() === currentAccount;
                     });
 
@@ -2574,22 +2426,19 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                     recentItems = recentItems.filter(item =>
                       item.worksheetType && item.worksheetType.trim() === selectedType
                     );
+
                     // Filter by the currently selected grade
                     const selectedGrade = document.getElementById("bulkGrade").value;
 
                     // NEW: Filter by the currently selected subject (backward compatible)
                     const selectedSubject = document.getElementById("bulkSubject").value;
                     if (selectedSubject) {
-                      // Only filter by subject if lessons actually have subject data
-                      // This provides backward compatibility with lessons created before subject field
                       const itemsWithSubject = recentItems.filter(item => item.subject && item.subject.trim());
                       if (itemsWithSubject.length > 0) {
-                        // If some lessons have subject data, filter by it
                         recentItems = recentItems.filter(item =>
                           (item.subject || '').trim() === selectedSubject.trim()
                         );
                       }
-                      // If no lessons have subject data, show all lessons (backward compatibility)
                     }
 
                     // NEW: Filter by the currently selected standard
@@ -2603,15 +2452,14 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                     if (selectedGrade) {
                       recentItems = recentItems.filter(item => String(item.grade) === String(selectedGrade));
                     }
-                    // Instead of sorting by date, attempt to display items ordered by the LESSON CODES sheet
-                    // and grouped by domain. We'll request the canonical codes + domain map for the current
-                    // subject/standard/grade and fall back to newest-first for codes not found.
+
                     const selectedSubjectVal = selectedSubject || '';
                     const selectedStandardVal = selectedStandard || '';
                     const selectedGradeVal = selectedGrade;
 
                     // Request canonical ordering and domain map from server
-                    google.script.run.withSuccessHandler(mapResult => {
+                    try {
+                        const mapResult = await api('getLessonDomainMap', { selectedSubjectVal, selectedStandardVal, selectedGradeVal });
                         const sheetOrder = (mapResult && mapResult.codes) || [];
                         const domainMap = (mapResult && mapResult.domainMap) || {};
 
@@ -2639,7 +2487,6 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                                 const ia = orderIndex.hasOwnProperty(a.code) ? orderIndex[a.code] : UNKNOWN_INDEX;
                                 const ib = orderIndex.hasOwnProperty(b.code) ? orderIndex[b.code] : UNKNOWN_INDEX;
                                 if (ia !== ib) return ia - ib;
-                                // Fallback: newest first
                                 return new Date(b.generatedTime) - new Date(a.generatedTime);
                             });
                         });
@@ -2658,26 +2505,28 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                         if (leftovers.length) {
                             // Sort leftovers newest-first then append under 'Ungrouped'
                             leftovers.sort((a,b)=> new Date(b.generatedTime) - new Date(a.generatedTime));
-                            const hdr = document.createElement('tr');
-                            hdr.className = 'domain-header';
-                            hdr.innerHTML = `<td colspan="6" style="font-weight:600; background:#f4f4f4;">Ungrouped</td>`;
-                            tbody.appendChild(hdr);
-                            leftovers.forEach(item => {
-                                const workflowStatus = item.workflowStatus || 'generated';
-                                addTableRow(tbody, item.code, item.grade, workflowStatus);
-                                updateTableRow(item.code, item.grade, {
-                                    worksheetUrl: item.worksheetUrl,
-                                    answerKeyUrl: item.answerKeyUrl,
-                                    generatedTime: item.generatedTime,
-                                    packageUrl: item.packageUrl,
-                                    instructionsUrl: item.instructionsUrl
+                            const tbody = document.getElementById('bulkTableBody');
+                            if (tbody) {
+                                const hdr = document.createElement('tr');
+                                hdr.className = 'domain-header';
+                                hdr.innerHTML = `<td colspan="6" style="font-weight:600; background:#f4f4f4;">Ungrouped</td>`;
+                                tbody.appendChild(hdr);
+                                leftovers.forEach(item => {
+                                    const workflowStatus = item.workflowStatus || 'generated';
+                                    addTableRow(tbody, item.code, item.grade, workflowStatus);
+                                    updateTableRow(item.code, item.grade, {
+                                        worksheetUrl: item.worksheetUrl,
+                                        answerKeyUrl: item.answerKeyUrl,
+                                        generatedTime: item.generatedTime,
+                                        packageUrl: item.packageUrl,
+                                        instructionsUrl: item.instructionsUrl
+                                    });
                                 });
-                            });
+                            }
                         }
-
-                    }).withFailureHandler(err => {
+                    } catch (errMap) {
                         // On failure fetching sheet order/domain, fallback to previous newest-first behavior
-                        console.error('getLessonDomainMap failed', err);
+                        console.error('getLessonDomainMap failed', errMap);
                         recentItems.sort((a, b) => new Date(b.generatedTime) - new Date(a.generatedTime));
                         const container = bulkTableContainer;
                         container.innerHTML = `<table id="bulkTable"><thead><tr>
@@ -2700,12 +2549,12 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                                 instructionsUrl: item.instructionsUrl
                             });
                         });
-                    }).getLessonDomainMap(selectedSubjectVal, selectedStandardVal, selectedGradeVal);
-                })
-                .withFailureHandler(err => {
-                    bulkTableContainer.classList.remove("table-blinking"); // Remove blinking class on failure
-                    alert("Error loading previous: " + err.message);
-                })[fn]();
+                    }
+                } catch (err) {
+                    bulkTableContainer.classList.remove("table-blinking");
+                    alert("Error loading previous: " + (err && err.message ? err.message : err));
+                }
+            })();
         }
 
         /**
@@ -2726,22 +2575,19 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             const rowEl = document.getElementById(`row_${grade}_${code}`);
             if (rowEl) rowEl.classList.add('blinking');
             
-            google.script.run
-                .withSuccessHandler(() => {
-                    // Remove the row from the table
+            (async () => {
+                try {
+                    await api('deleteLessonAndResources', { grade, code, worksheetType, userEmail });
                     const row = document.getElementById(`row_${grade}_${code}`);
                     if (row) row.remove();
-                    
-                    // Reset button state
                     const buttonKey = `${grade}_${code}`;
                     delete packageButtonStates[buttonKey];
                     delete lessonUrls[buttonKey];
                     loadTotalEarnings();
-                })
-                .withFailureHandler(err => {
-                    alert('Failed to delete lesson: ' + err.message);
-                })
-                .deleteLessonAndResources(grade, code, worksheetType, userEmail);
+                } catch (err) {
+                    alert('Failed to delete lesson: ' + (err && err.message ? err.message : err));
+                }
+            })();
         }
 
         // Regenerate functionality removed
@@ -2906,56 +2752,31 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                         const urlsForKey = lessonUrls[keyForUrls] || {};
                         const worksheetUrlForKey = urlsForKey.worksheetUrl || urlsForKey.packageUrl || '';
                         if (worksheetUrlForKey) {
-                            google.script.run
-                                .withSuccessHandler(parts => {
+                            (async () => {
+                                try {
+                                    const parts = await api('getWorksheetTitleParts', { url: worksheetUrlForKey });
                                     try { btn.classList.remove('blinking-ui'); } catch (er) {}
-                                    if (!parts) {
-                                        showMessage('No document information available.', 'error');
-                                        setTimeout(() => { contextMenu.style.display = 'none'; }, 300);
-                                        return;
-                                    }
-                                    // Prefer to copy only the visible passage title.
-                                    // Fallback to fileName or nameLine if passageTitle not available.
+                                    if (!parts) { showMessage('No document information available.', 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 300); return; }
                                     let textToCopy = (parts.passageTitle || '').trim();
-                                    if (!textToCopy) {
-                                        if (parts.fileName) textToCopy = String(parts.fileName || '').trim();
-                                        else if (parts.nameLine) textToCopy = String(parts.nameLine || '').trim();
-                                    }
+                                    if (!textToCopy) { if (parts.fileName) textToCopy = String(parts.fileName || '').trim(); else if (parts.nameLine) textToCopy = String(parts.nameLine || '').trim(); }
                                     const onCopied = () => { setMenuItemTemporaryState(btn, 'Copied!'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); };
                                     const onCopyFail = () => { showMessage('Failed to copy title to clipboard.', 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); };
-                                    if (!textToCopy) {
-                                        showMessage('No title found in document to copy.', 'error');
-                                        setTimeout(() => { contextMenu.style.display = 'none'; }, 300);
-                                        return;
-                                    }
-                                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                                        navigator.clipboard.writeText(textToCopy).then(onCopied).catch(onCopyFail);
-                                    } else {
-                                        const ta = document.createElement('textarea'); ta.value = textToCopy; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); onCopied(); } catch (e) { onCopyFail(); } ta.remove();
-                                    }
-                                })
-                                .withFailureHandler(err => { try { btn.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to fetch document info: ' + (err && err.message), 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 600); })
-                                .getWorksheetTitleParts(worksheetUrlForKey);
+                                    if (!textToCopy) { showMessage('No title found in document to copy.', 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 300); return; }
+                                    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(textToCopy).then(onCopied).catch(onCopyFail); else { const ta = document.createElement('textarea'); ta.value = textToCopy; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); onCopied(); } catch (e) { onCopyFail(); } ta.remove(); }
+                                } catch (err) { try { btn.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to fetch document info: ' + (err && err.message), 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 600); }
+                            })();
                         } else {
                             // Fallback to original title generation from prompt
-                            google.script.run
-                                .withSuccessHandler(title => {
+                            (async () => {
+                                try {
+                                    const title = await api('generateTitleFromPrompt', { subject, standard, grade, code, worksheetType });
                                     try { btn.classList.remove('blinking-ui'); } catch (er) {}
-                                    if (!title) {
-                                        showMessage('No title generated.', 'error');
-                                        setTimeout(() => { contextMenu.style.display = 'none'; }, 300);
-                                        return;
-                                    }
+                                    if (!title) { showMessage('No title generated.', 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 300); return; }
                                     const onCopied = () => { setMenuItemTemporaryState(btn, 'Copied!'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); };
                                     const onCopyFail = () => { showMessage('Failed to copy title to clipboard.', 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); };
-                                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                                        navigator.clipboard.writeText(title).then(onCopied).catch(onCopyFail);
-                                    } else {
-                                        const ta = document.createElement('textarea'); ta.value = title; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); onCopied(); } catch (e) { onCopyFail(); } ta.remove();
-                                    }
-                                })
-                                .withFailureHandler(err => { try { btn.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to generate title: ' + (err && err.message), 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 600); })
-                                .generateTitleFromPrompt(subject, standard, grade, code, worksheetType);
+                                    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(title).then(onCopied).catch(onCopyFail); else { const ta = document.createElement('textarea'); ta.value = title; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); onCopied(); } catch (e) { onCopyFail(); } ta.remove(); }
+                                } catch (err) { try { btn.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to generate title: ' + (err && err.message), 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 600); }
+                            })();
                         }
                         break;
                     }
@@ -2973,25 +2794,17 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                         // createLessonKey is defined earlier and now produces same key as server helpers
                         const lessonKey = createLessonKey(accountForKey, grade, code, worksheetTypeForKey);
 
-                        google.script.run
-                            .withSuccessHandler(title => {
+                        (async () => {
+                            try {
+                                const title = await api('getTptTitleByLessonKey', { lessonKey });
                                 try { btnT.classList.remove('blinking-ui'); } catch (er) {}
-                                if (!title || !String(title).trim()) {
-                                    showMessage('No saved TPT title found for this lesson.', 'error');
-                                    setTimeout(() => { contextMenu.style.display = 'none'; }, 400);
-                                    return;
-                                }
+                                if (!title || !String(title).trim()) { showMessage('No saved TPT title found for this lesson.', 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 400); return; }
                                 const textToCopy = String(title).trim();
                                 const onCopied = () => { setMenuItemTemporaryState(btnT, 'Copied!'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); };
                                 const onCopyFail = () => { showMessage('Failed to copy TPT title to clipboard.', 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); };
-                                if (navigator.clipboard && navigator.clipboard.writeText) {
-                                    navigator.clipboard.writeText(textToCopy).then(onCopied).catch(onCopyFail);
-                                } else {
-                                    const ta = document.createElement('textarea'); ta.value = textToCopy; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); onCopied(); } catch (e) { onCopyFail(); } ta.remove();
-                                }
-                            })
-                            .withFailureHandler(err => { try { btnT.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to fetch TPT title: ' + (err && err.message), 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 600); })
-                            .getTptTitleByLessonKey(lessonKey);
+                                if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(textToCopy).then(onCopied).catch(onCopyFail); else { const ta = document.createElement('textarea'); ta.value = textToCopy; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); onCopied(); } catch (e) { onCopyFail(); } ta.remove(); }
+                            } catch (err) { try { btnT.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to fetch TPT title: ' + (err && err.message), 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 600); }
+                        })();
                         break;
                     }
                     case 'copyTptDescription': {
@@ -3003,25 +2816,15 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                         const worksheetUrl = urlsMap.worksheetUrl || urlsMap.packageUrl || '';
                         const btn = e.target;
                         try { btn.classList.add('blinking-ui'); } catch (er) {}
-                        google.script.run
-                            .withSuccessHandler(html => {
+                        (async () => {
+                            try {
+                                const html = await api('generateDescriptionFromPrompt', { subject, standard, grade, code, worksheetType, worksheetUrl });
                                 try { btn.classList.remove('blinking-ui'); } catch (er) {}
-                                console.log('Description generated successfully:', html);
-                                if (!html || html.trim() === '') {
-                                    showMessage('No description was generated. Please check the console for details.', 'error');
-                                    setTimeout(() => { contextMenu.style.display = 'none'; }, 600);
-                                    return;
-                                }
+                                if (!html || html.trim() === '') { showMessage('No description was generated. Please check the console for details.', 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 600); return; }
                                 copyRichTextToClipboard(html, btn);
                                 setTimeout(() => { contextMenu.style.display = 'none'; }, 900);
-                            })
-                            .withFailureHandler(err => {
-                                try { btn.classList.remove('blinking-ui'); } catch (er) {}
-                                console.error('Failed to generate description:', err);
-                                showMessage('Failed to generate description: ' + (err && err.message || err), 'error');
-                                setTimeout(() => { contextMenu.style.display = 'none'; }, 600);
-                            })
-                            .generateDescriptionFromPrompt(subject, standard, grade, code, worksheetType, worksheetUrl);
+                            } catch (err) { try { btn.classList.remove('blinking-ui'); } catch (er) {} ; console.error('Failed to generate description:', err); showMessage('Failed to generate description: ' + (err && err.message || err), 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 600); }
+                        })();
                         break;
                     }
                     case 'downloadWorksheet': {
@@ -3031,11 +2834,13 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                         if (!docUrl) return showMessage('Worksheet URL not available for this lesson.', 'error');
                         const btn = e.target;
                         try { btn.classList.add('blinking-ui'); } catch (er) {}
-                        google.script.run
-                            .withSuccessHandler(({name, data}) => {
+                        (async () => {
+                            try {
+                                const res = await api('getWorksheetPdfBase64', { url: docUrl });
                                 try { btn.classList.remove('blinking-ui'); } catch (er) {}
-                                // create blob link from base64 and trigger download
-                                const binary = atob(data);
+                                const name = res && res.name;
+                                const data = res && res.data;
+                                const binary = atob(data || '');
                                 const len = binary.length;
                                 const bytes = new Uint8Array(len);
                                 for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
@@ -3047,9 +2852,8 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                                 setTimeout(() => URL.revokeObjectURL(url), 2000);
                                 setMenuItemTemporaryState(btn, 'Downloaded');
                                 setTimeout(() => { contextMenu.style.display = 'none'; }, 900);
-                            })
-                            .withFailureHandler(err => { try { btn.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to download worksheet: ' + err.message, 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); })
-                            .getWorksheetPdfBase64(docUrl);
+                            } catch (err) { try { btn.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to download worksheet: ' + (err && err.message || err), 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); }
+                        })();
                         break;
                     }
                     case 'downloadPreview': {
@@ -3059,10 +2863,13 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                         if (!instrUrl) return showMessage('Instructions / Preview folder URL not available for this lesson.', 'error');
                         const btn = e.target;
                         try { btn.classList.add('blinking-ui'); } catch (er) {}
-                        google.script.run
-                            .withSuccessHandler(({name, data}) => {
+                        (async () => {
+                            try {
+                                const res = await api('getPreviewPdfFromInstructionsFolderBase64', { url: instrUrl });
                                 try { btn.classList.remove('blinking-ui'); } catch (er) {}
-                                const binary = atob(data);
+                                const name = res && res.name;
+                                const data = res && res.data;
+                                const binary = atob(data || '');
                                 const len = binary.length;
                                 const bytes = new Uint8Array(len);
                                 for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
@@ -3074,9 +2881,8 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                                 setTimeout(() => URL.revokeObjectURL(url), 2000);
                                 setMenuItemTemporaryState(btn, 'Downloaded');
                                 setTimeout(() => { contextMenu.style.display = 'none'; }, 900);
-                            })
-                            .withFailureHandler(err => { try { btn.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to download preview: ' + err.message, 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); })
-                            .getPreviewPdfFromInstructionsFolderBase64(instrUrl);
+                            } catch (err) { try { btn.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to download preview: ' + (err && err.message || err), 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); }
+                        })();
                         break;
                     }
                     case 'deleteLesson':
@@ -3154,20 +2960,20 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
         function loadTotalEarnings() {
             if (!currentUser.username || __earningsFetching) return;
             __earningsFetching = true;
-            google.script.run
-                .withSuccessHandler(total => {
+            (async () => {
+                try {
+                    const total = await api('getTotalEarningsForUser', { username: currentUser.username });
                     if (typeof updateEarningsDisplay === 'function') {
                         updateEarningsDisplay(parseFloat(total || 0));
                     } else if (earningsAmount) {
                         earningsAmount.textContent = 'LKR ' + (parseFloat(total || 0)).toFixed(2);
                     }
-                    __earningsFetching = false;
-                })
-                .withFailureHandler(() => {
+                } catch (err) {
                     if (earningsAmount) earningsAmount.textContent = 'LKR 0.00';
+                } finally {
                     __earningsFetching = false;
-                })
-                .getTotalEarningsForUser(currentUser.username);
+                }
+            })();
         }
 
         // Update earnings display with animation
