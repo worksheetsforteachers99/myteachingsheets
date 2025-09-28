@@ -2448,7 +2448,8 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             }
 
             // Call server to get previous lesson codes and URLs with state
-            const isTF = document.getElementById("bulkWorksheetType").value === "True Or False with Passage";
+            // Use safe accessors in case some selects are not present in the DOM
+            const isTF = ((document.getElementById("bulkWorksheetType")?.value) || '') === "True Or False with Passage";
             const fn   = isTF ? "listPreviouslyGeneratedTF" : "listPreviouslyGenerated";
                         // previous server callback removed; replaced by api() flow below
             (async () => {
@@ -2462,17 +2463,17 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                       return item.accountName && item.accountName.trim() === currentAccount;
                     });
 
-                    // Filter by the currently selected worksheet type
-                    const selectedType = document.getElementById("bulkWorksheetType").value.trim();
+                    // Filter by the currently selected worksheet type (safe access)
+                    const selectedType = (document.getElementById("bulkWorksheetType")?.value || '').trim();
                     recentItems = recentItems.filter(item =>
                       item.worksheetType && item.worksheetType.trim() === selectedType
                     );
 
-                    // Filter by the currently selected grade
-                    const selectedGrade = document.getElementById("bulkGrade").value;
+                    // Filter by the currently selected grade (safe access)
+                    const selectedGrade = document.getElementById("bulkGrade")?.value || '';
 
                     // NEW: Filter by the currently selected subject (backward compatible)
-                    const selectedSubject = document.getElementById("bulkSubject").value;
+                    const selectedSubject = document.getElementById("bulkSubject")?.value || '';
                     if (selectedSubject) {
                       const itemsWithSubject = recentItems.filter(item => item.subject && item.subject.trim());
                       if (itemsWithSubject.length > 0) {
@@ -2482,8 +2483,8 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                       }
                     }
 
-                    // NEW: Filter by the currently selected standard
-                    const selectedStandard = document.getElementById("bulkStandard").value;
+                    // NEW: Filter by the currently selected standard (safe access)
+                    const selectedStandard = document.getElementById("bulkStandard")?.value || '';
                     if (selectedStandard) {
                       recentItems = recentItems.filter(item =>
                         (item.standard || '').trim() === selectedStandard.trim()
