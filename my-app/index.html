@@ -1,0 +1,3212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Worksheet Generator</title>
+    <!-- replace GAS style include with: -->
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <!-- Floating Lesson Search Panel -->
+    <div id="lesson-search-panel">
+        <h3 class="panel-title">Lesson Search</h3>
+        <input type="search"
+               id="lessonSearch"
+               placeholder="Search lesson…"
+               autocomplete="off">
+    <hr>
+
+        <label for="bulkSubject">Subject</label>
+        <select id="bulkSubject">
+            <option value="" disabled selected>Select subject</option>
+        </select>
+
+        <label for="bulkStandard">Standard</label>
+        <select id="bulkStandard">
+            <option value="" disabled selected>Select standard</option>
+        </select>
+
+        <label for="bulkGrade">Grade Level</label>
+        <select id="bulkGrade">
+            <option value="" disabled selected>Select grade</option>
+        </select>
+
+        <label for="bulkDomain">Domain to Generate</label>
+        <select id="bulkDomain">
+            <option value="" selected>All domains</option>
+            <option value="Physical Science">Physical Science</option>
+            <option value="Life Science">Life Science</option>
+            <option value="Earth & Space Science">Earth & Space Science</option>
+            <option value="Engineering & Tech">Engineering & Tech</option>
+        </select>
+
+        <label for="bulkLesson">Lesson Code</label>
+        <select id="bulkLesson" disabled>
+            <option value="" disabled selected>Select code</option>
+        </select>
+
+        <label for="bulkWorksheetType">Worksheet Type</label>
+        <select id="bulkWorksheetType">
+            <option value="Reading Comprehension" selected>Reading Comprehension</option>
+            <option value="True Or False with Passage">True Or False with Passage</option>
+            <option value="Test Paper">Test Paper</option>
+        </select>
+
+    <div class="button-row column">
+            <button class="btn-doc" id="btnBulkDocs" onclick="bulkGenerateDocs()">
+                <span class="btn-label">Generate</span>
+                <div class="spinner" id="spinnerBulk"></div>
+            </button>
+            <button class="btn-package hidden" id="btnStopBulk" onclick="stopBulkGenerate()" disabled>
+                <span class="btn-label">Stop Generate</span>
+            </button>
+        </div>
+                <div class="version-badge">
+                    V.1.1.6
+                </div>
+    </div>
+    <!-- Application Header -->
+    <header class="app-header" id="appHeader">
+        <div class="header-left">
+            <a href="#" class="header-logo">Worksheet Generator</a>
+        </div>
+        
+        <div class="header-right">
+            <div class="earnings-display" id="earningsDisplay">
+                <span id="earningsAmount">LKR 0.00</span>
+            </div>
+            
+            <div class="user-profile">
+                <button class="profile-button" id="profileButton">
+                    <div class="profile-avatar" id="profileAvatar">U</div>
+                    <div class="profile-info">
+                        <div class="profile-username" id="profileUsername">Username</div>
+                        <div class="profile-account" id="profileAccount">Account Name</div>
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 10l5 5 5-5z"/>
+                    </svg>
+                </button>
+                
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="dropdown-header">
+                        <div class="dropdown-username" id="dropdownUsername">Username</div>
+                        <div class="dropdown-account" id="dropdownAccount">Account Name</div>
+                    </div>
+                    <div class="dropdown-menu">
+                        <button class="dropdown-item" id="templateButton">
+                            <svg class="dropdown-icon" viewBox="0 0 24 24"><path d="M4 4h16v2H4zM4 10h16v2H4zM4 16h16v2H4z"/></svg>
+                            Template
+                        </button>
+                        <button class="dropdown-item">
+                            <svg class="dropdown-icon" viewBox="0 0 24 24">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                            Profile Settings
+                        </button>
+                        <button class="dropdown-item" id="payoutMethodButton">
+                            <svg class="dropdown-icon" viewBox="0 0 24 24">
+                                <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+                            </svg>
+                            Payout Method
+                        </button>
+                        <button class="dropdown-item">
+                            <svg class="dropdown-icon" viewBox="0 0 24 24">
+                                <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                            </svg>
+                            Settings
+                        </button>
+                        <!-- Prompts submenu (Lesson + Bundle) -->
+                        <div class="dropdown-item dropdown-prompts" id="promptItem" tabindex="0">
+                            <svg class="dropdown-icon" viewBox="0 0 24 24"><path d="M3 3h18v2H3zM3 7h18v2H3zM3 11h18v2H3z"/></svg>
+                            Prompts
+                            <div class="tutorials-submenu" id="promptsSubmenu" aria-hidden="true">
+                                <div class="tutorial-link" id="lessonPromptSub" role="button" tabindex="0">Lesson Prompt</div>
+                                <div class="tutorial-link" id="bundlePromptSub" role="button" tabindex="0">Bundle Prompt</div>
+                            </div>
+                        </div>
+                        <div class="dropdown-item dropdown-tutorials" id="tutorialsItem" tabindex="0">
+                            <svg class="dropdown-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 7l10 5v6l-10 5-10-5v-6l10-5z"/></svg>
+                            Tutorials
+                            <div class="tutorials-submenu" id="tutorialsSubmenu" aria-hidden="true"></div>
+                        </div>
+                        <!-- old standalone Bundle Prompt removed; now inside Prompt submenu -->
+                        <button class="dropdown-item logout" id="logoutButton">
+                            <svg class="dropdown-icon" viewBox="0 0 24 24">
+                                <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                            </svg>
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Login Container -->
+        <div class="login-container" id="loginContainer">
+            <div class="logo">
+                <h1>Worksheet Generator</h1>
+                <p>Please sign in to continue</p>
+            </div>
+            
+            <div id="messageContainer" class="message"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+                
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <span id="btnText">Sign In</span>
+                    <div class="spinner" id="spinner"></div>
+                </button>
+            </form>
+            
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"></div>
+                <div class="loading-text" id="loadingText">Checking credentials...</div>
+            </div>
+        </div>
+
+        <!-- Main Application Container -->
+    <div class="main-app" id="mainApp">
+            <div id="bulkSection">
+                <!-- Container for bulk review table -->
+                    <div id="bulkTableContainer"></div>
+                <!-- Row context menu -->
+                            <div id="contextMenu">
+                                <div class="context-menu__item" data-action="copyTitle">Copy PDF Title</div>
+                                <div class="context-menu__item" data-action="copyTptTitle">Copy TPT Title</div>
+                                <div class="context-menu__item" data-action="copyTptDescription">Copy TPT Description</div>
+                                <div class="context-menu__item" data-action="downloadWorksheet" title="Download worksheet PDF">Download Worksheet</div>
+                                <div class="context-menu__item" data-action="downloadPreview" title="Download preview PDF">Download Preview</div>
+                                <div class="context-menu__item" data-action="deleteLesson">Delete</div>
+                                <div class="context-menu__item context-menu__info" id="lessonIdDisplay">
+                                    <span>Lesson ID: </span>
+                                    <span id="lessonIdValue">-</span>
+                                </div>
+                            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Replace/Skip Modal -->
+    <div id="replaceModal">
+        <div class="modal-dialog">
+            <p id="modalMessage"></p>
+            <div class="button-row">
+                <button class="btn-package" id="modalReplaceBtn">Replace</button>
+                <button class="btn-form" id="modalSkipBtn">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payout Method Modal -->
+    <div id="payoutModal">
+        <div class="modal-dialog">
+            <h3>Payout Method</h3>
+            
+            <!-- View Mode -->
+            <div id="payoutView" class="hidden">
+                <div class="payout-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Bank:</span>
+                        <span class="detail-value" id="viewBank">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Branch:</span>
+                        <span class="detail-value" id="viewBranch">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Account Number:</span>
+                        <span class="detail-value" id="viewAccountNumber">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Account Name:</span>
+                        <span class="detail-value" id="viewAccountName">-</span>
+                    </div>
+                </div>
+                <div class="button-row">
+                    <button type="button" class="btn-package" id="payoutEditBtn">Edit</button>
+                    <button type="button" class="btn-form" id="payoutCancelBtn">Cancel</button>
+                </div>
+            </div>
+            
+            <!-- Edit Mode -->
+            <form id="payoutForm" class="hidden">
+                <label for="bank">Bank</label>
+                <input type="text" id="bank" name="bank" required>
+
+                <label for="branch">Branch</label>
+                <input type="text" id="branch" name="branch" required>
+
+                <label for="accountNumber">Account Number</label>
+                <input type="text" id="accountNumber" name="accountNumber" required>
+
+                <label for="accountName">Account Name</label>
+                <input type="text" id="accountName" name="accountName" required>
+
+                <div class="button-row">
+                    <button type="submit" class="btn-package">Save</button>
+                    <button type="button" class="btn-form" id="payoutCancelEditBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        &copy; 2025 Worksheet Generator. All Rights Reserved.
+    </footer>
+
+        <!-- bundle panel removed — bundle features moved into domain headers -->
+
+    <!-- Bundle Panel Filter Sync Script -->
+
+
+    <!-- Bundle Panel Filter Sync Script -->
+
+    <script>
+        // Global variables
+        let isLoggedIn = false;
+        let currentUser = {
+            username: "",
+            accountName: "",
+            email: "",
+            earnings: 0
+        };
+        // Expose on window so other included HTML (Bundle.html) can read it via window.currentUser
+        window.currentUser = currentUser;
+        
+        // Package button states tracking - now managed by master sheet
+        const packageButtonStates = {};
+
+                        // Shared colgroup HTML used for consistent column widths across tables
+                        const COLGROUP_HTML = `
+            <colgroup>
+                <col style="width:var(--col-grade)">
+                <col style="width:var(--col-lesson)">
+                <col style="width:var(--col-worksheet)">
+                <col style="width:var(--col-answer)">
+                <col style="width:var(--col-lastedit)">
+                <col style="width:var(--col-package)">
+            </colgroup>`;
+        
+        // Login functionality
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const btnText = document.getElementById('btnText');
+        const spinner = document.getElementById('spinner');
+        const messageContainer = document.getElementById('messageContainer');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const loginContainer = document.getElementById('loginContainer');
+        const mainApp = document.getElementById('mainApp');
+        const appHeader = document.getElementById('appHeader');
+        
+        // Profile elements
+        const profileButton = document.getElementById('profileButton');
+        const profileDropdown = document.getElementById('profileDropdown');
+        const profileAvatar = document.getElementById('profileAvatar');
+        const profileUsername = document.getElementById('profileUsername');
+        const profileAccount = document.getElementById('profileAccount');
+        const dropdownUsername = document.getElementById('dropdownUsername');
+        const dropdownAccount = document.getElementById('dropdownAccount');
+        const earningsAmount = document.getElementById('earningsAmount');
+        const logoutButton = document.getElementById("logoutButton");
+        
+        // Persistent login keys
+        const LOCAL_STORAGE_KEY = "appscript_user_session";
+        
+        function showMessage(text, type = 'error') {
+            messageContainer.textContent = text;
+            messageContainer.className = `message ${type}`;
+            messageContainer.style.display = 'block';
+            
+            // Auto-hide success messages after 3 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    hideMessage();
+                }, 3000);
+            }
+        }
+        
+        function hideMessage() {
+            messageContainer.style.display = 'none';
+        }
+        
+        function updateLessonIdDisplay(contextCode) {
+            const lessonIdValueEl = document.getElementById('lessonIdValue');
+            if (!lessonIdValueEl) return;
+            
+            try {
+                // Parse contextCode to get grade and code (format: "grade_code")
+                const parts = contextCode.split('_');
+                if (parts.length < 2) {
+                    lessonIdValueEl.textContent = '-';
+                    return;
+                }
+                
+                const grade = parts[0];
+                const code = parts[1];
+                
+                // Get current selections
+                const worksheetType = document.getElementById('bulkWorksheetType')?.value || '';
+                const accountName = currentUser?.accountName || '';
+                
+                if (!accountName || !worksheetType) {
+                    lessonIdValueEl.textContent = '-';
+                    return;
+                }
+                
+                // Generate lesson ID using same logic as Code.js createLessonKey
+                const lessonId = createLessonKey(accountName, grade, code, worksheetType);
+                lessonIdValueEl.textContent = lessonId;
+                
+            } catch (error) {
+                console.error('Error updating lesson ID display:', error);
+                lessonIdValueEl.textContent = '-';
+            }
+        }
+        
+        // Helper functions (synchronized with server-side helpers.js)
+        function abbreviateAccountName(accountName) {
+            if (!accountName) return '';
+            return String(accountName)
+                .split(/\s+/)
+                .filter(Boolean)
+                .map(w => w[0])
+                .join('')
+                .toUpperCase();
+        }
+
+        function abbreviateWorksheetType(worksheetType) {
+            const t = String(worksheetType || '').trim().toLowerCase();
+            if (!t) return '';
+            if (t.startsWith('reading')) return 'RC';
+            if (t.includes('true') && t.includes('false')) return 'TF';
+            // Fallback to initials of each word (matches server behavior)
+            return String(worksheetType || '')
+                .split(/\s+/)
+                .filter(Boolean)
+                .map(w => w[0])
+                .join('')
+                .toUpperCase();
+        }
+        
+        function createLessonKey(accountName, grade, code, worksheetType) {
+            const acct = abbreviateAccountName(accountName);
+            const type = abbreviateWorksheetType(worksheetType);
+            return `${acct}${grade}${code}${type}`;
+        }
+        
+        function setLoading(loading, text = 'Checking credentials...') {
+            if (loading) {
+                loginBtn.disabled = true;
+                btnText.style.opacity = '0';
+                spinner.style.display = 'block';
+                loadingOverlay.style.display = 'flex';
+                loadingText.textContent = text;
+            } else {
+                loginBtn.disabled = false;
+                btnText.style.opacity = '1';
+                spinner.style.display = 'none';
+                loadingOverlay.style.display = 'none';
+            }
+        }
+        
+        function updateUserProfile(userData) {
+            currentUser = { ...currentUser, ...userData };
+            
+            // Update avatar with first letter of username
+            const firstLetter = currentUser.username.charAt(0).toUpperCase();
+            if (profileAvatar) profileAvatar.textContent = firstLetter;
+            
+            // Update profile display
+            if (profileUsername) profileUsername.textContent = currentUser.username;
+            if (profileAccount) profileAccount.textContent = currentUser.accountName || 'Account Name';
+            
+            // Update dropdown
+            if (dropdownUsername) dropdownUsername.textContent = currentUser.username;
+            if (dropdownAccount) dropdownAccount.textContent = currentUser.accountName || 'Account Name';
+            
+            // Update price display (will be loaded separately)
+            if (earningsAmount) earningsAmount.textContent = 'LKR 0.00';
+            // Keep window.currentUser in sync for other included panels that read window.currentUser
+            window.currentUser = currentUser;
+        }
+        
+function showMainApp() {
+    document.body.classList.add('app-mode');
+    isLoggedIn = true;
+
+    // Start main table blinking immediately and show placeholder rows
+    (function startMainTableBlinkingEarly() {
+        const btc = document.getElementById('bulkTableContainer');
+        if (btc) {
+            try { if (typeof showMainPlaceholder === 'function') showMainPlaceholder(); } catch (e) {}
+            btc.classList.add('table-blinking');
+        }
+    })();
+
+    // Initialize main app
+    // Only load table immediately if no saved gradeLevel exists
+    if (!localStorage.getItem('gradeLevel')) {
+        loadPrevious();
+    }
+    // Load total earnings
+    loadTotalEarnings();
+    
+    // Load subjects into dropdown
+    populateSubjects();
+    // Populate lesson suggestions for datalist after app and table are loaded
+    if (typeof populateLessonSuggestions === 'function') {
+      populateLessonSuggestions();
+    }
+    // Bundle panel no longer uses tick/check UI
+}
+
+// Function to populate subjects and standards dropdowns
+function populateSubjects() {
+  const subjectDropdown  = document.getElementById('bulkSubject');
+  const standardDropdown = document.getElementById('bulkStandard');
+  const gradeDropdown    = document.getElementById('bulkGrade');
+  const domainDropdown   = document.getElementById('bulkDomain');
+  const lessonDropdown   = document.getElementById('bulkLesson');
+
+    // Helper: disable/enable all relevant selects except the provided ids.
+    // exceptIds may be a string (single id) or array of ids to keep enabled.
+    function setSelectsDisabledExcept(exceptIds, disabled) {
+        const ids = ['bulkSubject','bulkStandard','bulkGrade','bulkDomain','bulkLesson','bulkWorksheetType','statusFilter'];
+        const keep = Array.isArray(exceptIds) ? exceptIds : (exceptIds ? [exceptIds] : []);
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.disabled = disabled && !keep.includes(id);
+        });
+    }
+
+  if (!subjectDropdown || !standardDropdown) return;
+
+  // Restore worksheet type if previously saved
+  const worksheetTypeDropdown = document.getElementById('bulkWorksheetType');
+  if (worksheetTypeDropdown) {
+    const savedWorksheetType = localStorage.getItem('sel_worksheet_type');
+    if (savedWorksheetType && [...worksheetTypeDropdown.options].some(o => o.value === savedWorksheetType)) {
+      worksheetTypeDropdown.value = savedWorksheetType;
+    }
+  }
+
+    // Track whether the user has manually interacted with any of the bulk selects.
+    // Programmatic dispatchEvent(...) calls have event.isTrusted === false, so we only
+    // set this flag when the user actually changes a control.
+    window._bulkUserInteracted = window._bulkUserInteracted || false;
+    function markBulkUserInteracted(ev) {
+        try {
+            if (ev && ev.isTrusted) window._bulkUserInteracted = true;
+        } catch (e) { /* ignore */ }
+    }
+    // Attach lightweight listeners that mark real user actions.
+    [subjectDropdown, standardDropdown, gradeDropdown, domainDropdown, lessonDropdown].forEach(el => {
+        if (!el) return;
+        el.addEventListener('change', markBulkUserInteracted);
+    });
+
+  // Reset & disable dependent selects
+  subjectDropdown.innerHTML  = '<option value="" disabled selected>Select subject</option>';
+  standardDropdown.innerHTML = '<option value="" disabled selected>Select standard</option>';
+  standardDropdown.disabled = true; gradeDropdown.disabled = true;
+  domainDropdown.disabled   = true; lessonDropdown.disabled = true;
+
+    // ① Load Subjects
+  google.script.run
+    .withSuccessHandler(subjects => {
+      subjects.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s; o.textContent = s;
+        subjectDropdown.appendChild(o);
+      });
+            // Restore last chosen subject and cascade — only if user hasn't interacted yet
+            const savedSubject = localStorage.getItem('sel_subject');
+            if (!window._bulkUserInteracted && savedSubject && [...subjectDropdown.options].some(o => o.value === savedSubject)) {
+                subjectDropdown.value = savedSubject;
+                subjectDropdown.dispatchEvent(new Event('change'));
+            }
+    })
+    .withFailureHandler(err => console.error('Failed to load subjects', err))
+    .getSubjects();
+
+  // ② When Subject changes → load filtered Standards
+  subjectDropdown.addEventListener('change', function () {
+    localStorage.setItem('sel_subject', this.value);
+    const subj = this.value;
+    if (typeof loadPrevious === 'function') loadPrevious();
+    // Reset downstream selects
+    standardDropdown.innerHTML = '<option value="" disabled selected>Select standard</option>';
+    gradeDropdown.value = ''; domainDropdown.value = ''; lessonDropdown.value = '';
+    gradeDropdown.disabled = true; domainDropdown.disabled = true; lessonDropdown.disabled = true;
+
+    if (!subj) { standardDropdown.disabled = true; return; }
+
+        // Disable all selects while standards are loading (including the one just changed)
+        setSelectsDisabledExcept([], true);
+        standardDropdown.disabled = true;
+    google.script.run
+      .withSuccessHandler(standards => {
+        standards.forEach(st => {
+          const o = document.createElement('option');
+          o.value = o.textContent = st;
+          standardDropdown.appendChild(o);
+        });
+                // Restore last chosen standard and cascade — only if user hasn't interacted yet
+                const savedStandard = localStorage.getItem('sel_standard');
+                if (!window._bulkUserInteracted && savedStandard && [...standardDropdown.options].some(o => o.value === savedStandard)) {
+                    standardDropdown.value = savedStandard;
+                    standardDropdown.dispatchEvent(new Event('change'));
+                }
+                standardDropdown.disabled = standards.length === 0;
+                // Re-enable selects once standards finished loading. Individual downstream logic will re-disable where needed.
+                setSelectsDisabledExcept([], false);
+      })
+      .withFailureHandler(err => {
+        console.error('Failed to load standards', err);
+                standardDropdown.disabled = true;
+                setSelectsDisabledExcept([], false);
+      })
+      .getStandardsForSubject(subj);
+  });
+
+  // When Standard changes → load filtered Grades
+  standardDropdown.addEventListener('change', function () {
+    localStorage.setItem('sel_standard', this.value);
+    const standard = this.value;
+    if (typeof loadPrevious === 'function') loadPrevious();
+    const subject  = document.getElementById('bulkSubject').value;
+    const gradeDropdown  = document.getElementById('bulkGrade');
+    const domainDropdown = document.getElementById('bulkDomain');
+    const lessonDropdown = document.getElementById('bulkLesson');
+
+    // reset downstream
+    gradeDropdown.innerHTML  = '<option value="" disabled selected>Select grade</option>';
+    domainDropdown.value = ''; lessonDropdown.value = '';
+    domainDropdown.disabled = true; lessonDropdown.disabled = true;
+
+    if (!standard) { gradeDropdown.disabled = true; return; }
+
+        // Disable all selects while grades are loading (including the one just changed)
+        setSelectsDisabledExcept([], true);
+        gradeDropdown.disabled = true;
+    google.script.run
+      .withSuccessHandler(grades => {
+        grades.forEach(g => {
+          const o = document.createElement('option');
+          o.value = o.textContent = g;
+          gradeDropdown.appendChild(o);
+        });
+                // Restore last chosen grade (gradeLevel) and cascade — only if user hasn't interacted yet
+                const savedGrade = localStorage.getItem('gradeLevel');
+                if (!window._bulkUserInteracted && savedGrade && [...gradeDropdown.options].some(o => o.value === savedGrade)) {
+                    gradeDropdown.value = savedGrade;
+                    gradeDropdown.dispatchEvent(new Event('change'));
+                }
+                gradeDropdown.disabled = grades.length === 0;
+                // Re-enable selects after grades loaded
+                setSelectsDisabledExcept([], false);
+      })
+      .withFailureHandler(err => {
+        console.error('Failed to load grades', err);
+                gradeDropdown.disabled = true;
+                setSelectsDisabledExcept([], false);
+      })
+      .getGradesForSubjectAndStandard(subject, standard);
+  });
+
+  // When Grade changes → load filtered Domains
+  gradeDropdown.addEventListener('change', function () {
+    localStorage.setItem('gradeLevel', this.value);
+
+    // ✅ Add this line so the table rebuilds for the new grade
+    if (typeof loadPrevious === 'function') loadPrevious();
+
+    const grade     = this.value;
+    const subject   = document.getElementById('bulkSubject').value;
+    const standard  = document.getElementById('bulkStandard').value;
+    const domainDropdown = document.getElementById('bulkDomain');
+    const lessonDropdown = document.getElementById('bulkLesson');
+
+    // reset downstream
+    domainDropdown.innerHTML = '<option value="" disabled selected>Select domain</option>';
+    lessonDropdown.value = '';
+    lessonDropdown.disabled = true;
+
+    if (!grade) { domainDropdown.disabled = true; return; }
+
+        // Disable all selects while domains are loading (including the one just changed)
+        setSelectsDisabledExcept([], true);
+        domainDropdown.disabled = true;
+    google.script.run
+      .withSuccessHandler(domains => {
+        domains.forEach(dom => {
+          const o = document.createElement('option');
+          o.value = o.textContent = dom;
+          domainDropdown.appendChild(o);
+        });
+                // Restore last chosen domain and (optionally) refresh table — only if user hasn't interacted yet
+                const savedDomain = localStorage.getItem('sel_domain');
+                if (!window._bulkUserInteracted && savedDomain && [...domainDropdown.options].some(o => o.value === savedDomain)) {
+                    domainDropdown.value = savedDomain;
+                    domainDropdown.dispatchEvent(new Event('change'));
+                    if (typeof loadPrevious === 'function') loadPrevious();
+                }
+                domainDropdown.disabled = domains.length === 0;
+                // Re-enable selects after domains loaded
+                setSelectsDisabledExcept([], false);
+      })
+      .withFailureHandler(err => {
+        console.error('Failed to load domains', err);
+                domainDropdown.disabled = true;
+                setSelectsDisabledExcept([], false);
+      })
+      .getDomainsForSubjectStandardGrade(subject, standard, grade);
+  });
+
+}
+// Global helper: disable/enable all relevant selects except the provided ids.
+// Keep this global so handlers outside populateSubjects (e.g., domain change) can use it.
+window.setSelectsDisabledExcept = function (exceptIds, disabled) {
+    const ids = ['bulkSubject','bulkStandard','bulkGrade','bulkDomain','bulkLesson','bulkWorksheetType','statusFilter'];
+    const keep = Array.isArray(exceptIds) ? exceptIds : (exceptIds ? [exceptIds] : []);
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.disabled = disabled && !keep.includes(id);
+    });
+};
+
+// Safe filter reader used by domain actions
+function getFiltersSafe() {
+    return {
+        subject: document.getElementById('bulkSubject')?.value || '',
+        standard: document.getElementById('bulkStandard')?.value || '',
+        grade: document.getElementById('bulkGrade')?.value || '',
+        worksheetType: document.getElementById('bulkWorksheetType')?.value || ''
+    };
+}
+
+// === Per-domain renderer helpers ===
+function slugDomain(name){ return String(name || 'Ungrouped').replace(/\W+/g,'_'); }
+
+function createDomainCard(domain, items){
+        const total = items.length;
+        const packaged = items.filter(it => it.packageUrl).length;
+        const tbodyId = 'tbody_' + slugDomain(domain);
+
+        const card = document.createElement('section');
+        card.className = 'domain-card';
+        card.innerHTML = `
+                <header class="domain-card__header">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div>
+                            <div class="domain-card__title">${domain}</div>
+                            <div class="domain-card__meta">${total} items • ${packaged} packaged</div>
+                        </div>
+                        <div class="domain-actions" style="margin-left:0;">
+                            <button class="btn-icon domain-collage" data-domain="${domain}" title="Make collage" aria-label="Make collage">
+                                <!-- Simple grid icon (2x2) -->
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <rect x="3" y="3" width="8" height="8" stroke="currentColor" stroke-width="1.5" fill="none" rx="1" />
+                                    <rect x="13" y="3" width="8" height="8" stroke="currentColor" stroke-width="1.5" fill="none" rx="1" />
+                                    <rect x="3" y="13" width="8" height="8" stroke="currentColor" stroke-width="1.5" fill="none" rx="1" />
+                                    <rect x="13" y="13" width="8" height="8" stroke="currentColor" stroke-width="1.5" fill="none" rx="1" />
+                                </svg>
+                            </button>
+                            <button class="btn-done domain-done" data-domain="${domain}" title="Mark bundle Done">DONE</button>
+                        </div>
+                    </div>
+                </header>
+
+                                <div>
+                                        <table class="domain-table">
+                                                ${COLGROUP_HTML}
+                                                <tbody id="${tbodyId}"></tbody>
+                                        </table>
+                                </div>
+        `;
+        document.getElementById('bulkTableContainer').appendChild(card);
+        return document.getElementById(tbodyId);
+}
+
+function renderDomainCards(groups, domainOrder){
+        const container = document.getElementById('bulkTableContainer');
+    container.innerHTML = '';
+
+    // render a single shared header once above the domain cards
+    renderSharedHeader();
+
+        const domainCodesMap = {};
+
+        domainOrder.forEach(domain => {
+                const items = groups[domain] || [];
+                const tbody = createDomainCard(domain, items);
+                domainCodesMap[domain] = items.map(it => String(it.code)).filter(Boolean);
+
+                items.forEach(item => {
+                        const status = item.workflowStatus || 'generated';
+                        addTableRow(tbody, item.code, item.grade, status);
+                        updateTableRow(item.code, item.grade, {
+                                worksheetUrl: item.worksheetUrl,
+                                answerKeyUrl: item.answerKeyUrl,
+                                generatedTime: item.generatedTime,
+                                packageUrl: item.packageUrl,
+                                instructionsUrl: item.instructionsUrl
+                        });
+                });
+        });
+
+        window.domainCodesMap = domainCodesMap;
+
+    container.querySelectorAll('.domain-collage').forEach(btn =>
+        btn.addEventListener('click', onDomainCollageClick)
+    );
+    container.querySelectorAll('.domain-done').forEach(btn =>
+        btn.addEventListener('click', onDomainDoneClick)
+    );
+}
+
+// Handler when user clicks DONE on a domain header — creates/upserts a bundle row and marks Completed
+function onDomainDoneClick(ev) {
+    ev.preventDefault();
+    const btn = ev.currentTarget;
+    const domainName = btn.dataset.domain || '';
+    const filters = getFiltersSafe();
+    const subject = filters.subject || '';
+    const grade = filters.grade || '';
+    const worksheetType = filters.worksheetType || '';
+    const bundleName = domainName; // use domain name as bundle name
+
+    if (!subject || !grade) return alert('Please select Subject and Grade before marking Done.');
+
+    btn.disabled = true;
+    btn.classList.add('btn-pulsing');
+
+    google.script.run.withSuccessHandler(function(res) {
+        btn.classList.remove('btn-pulsing');
+        btn.disabled = false;
+        if (res && res.success) {
+            // Flip to Completed appearance
+            btn.textContent = 'COMPLETED';
+            btn.classList.remove('btn-done');
+            btn.classList.add('btn-completed');
+            btn.dataset.lessonKey = res.lessonKey || '';
+            btn.dataset.instructionsUrl = res.instructionsUrl || '';
+            // When clicking Completed, open the instructions folder
+            btn.removeEventListener('click', onDomainDoneClick);
+            btn.addEventListener('click', function openInstr(e) {
+                e.preventDefault();
+                const url = btn.dataset.instructionsUrl || '';
+                if (url) window.open(url, '_blank');
+            });
+        } else {
+            alert('Failed to finalize bundle: ' + (res && res.error ? res.error : 'Unknown error'));
+        }
+    }).withFailureHandler(function(err) {
+        btn.classList.remove('btn-pulsing');
+        btn.disabled = false;
+        alert('Could not finalize bundle: ' + (err && err.message ? err.message : err));
+    }).finalizeDomainBundleRow(subject, grade, domainName, worksheetType, bundleName, '');
+}
+
+function renderSharedHeader(){
+    const container = document.getElementById('bulkTableContainer');
+    const headerWrap = document.createElement('div');
+    headerWrap.className = 'domain-shared-header';
+    headerWrap.innerHTML = `
+        <table class="domain-table shared-header-table">
+            ${COLGROUP_HTML}
+            <thead>
+                <tr>
+                    <th>Grade</th>
+                    <th>Lesson</th>
+                    <th>Worksheet</th>
+                    <th>Answer Key</th>
+                    <th>Last Edit</th>
+                    <th class="menu-cell menu-cell-padding package">Package</th>
+                </tr>
+            </thead>
+        </table>
+    `;
+    container.appendChild(headerWrap);
+}
+
+// Handler: create collage for a domain (uses existing server method)
+function onDomainCollageClick(ev) {
+    ev.preventDefault();
+    const btn = ev.currentTarget;
+    const domainName = btn.dataset.domain || '';
+    const { subject, standard, grade, worksheetType } = getFiltersSafe();
+
+    if (!(window.google && google && google.script && google.script.run)) {
+        return alert('Not available in this environment.');
+    }
+
+    // Keep the button disabled/blinking for the whole flow: generate description -> copy -> download & render collage
+    btn.disabled = true;
+    btn.classList.add('blinking-ui');
+
+    // Reuse the server-side generator: first fetch lessons state and generate the AI description, copy it to clipboard.
+    const generateAndCopyDescription = () => new Promise((resolve, reject) => {
+        const codes = (window.domainCodesMap && window.domainCodesMap[domainName]) || [];
+        if (!codes.length) return resolve(null); // nothing to copy, proceed
+
+        google.script.run
+            .withSuccessHandler((lessonsState) => {
+                google.script.run
+                    .withSuccessHandler((aiText) => {
+                        try {
+                            if (aiText) {
+                                if (navigator.clipboard?.writeText) {
+                                    navigator.clipboard.writeText(aiText).then(() => resolve(aiText), () => resolve(aiText));
+                                } else {
+                                    const ta = document.createElement('textarea'); ta.value = aiText; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta);
+                                    resolve(aiText);
+                                }
+                            } else {
+                                resolve(null);
+                            }
+                        } catch (e) { resolve(null); }
+                    })
+                    .withFailureHandler((err) => { resolve(null); })
+                    .generateBundleDescriptionFromPrompt(subject, standard, grade, domainName, codes, lessonsState);
+            })
+            .withFailureHandler((err) => { resolve(null); })
+            .getLessonsWithState();
+    });
+
+    // Execute: generate+copy first, then download images and render the collage.
+    generateAndCopyDescription().finally(() => {
+        google.script.run
+            .withSuccessHandler((list) => {
+                try {
+                    window.renderDomainCollageFromBase64List({
+                        images: list,
+                        domain: domainName,
+                        subject, standard, grade,
+                        worksheetType
+                    });
+                } catch (e) {
+                    alert('Failed to create collage: ' + (e && e.message ? e.message : e));
+                } finally {
+                    btn.disabled = false;
+                    btn.classList.remove('blinking-ui');
+                }
+            })
+            .withFailureHandler((err) => {
+                btn.disabled = false;
+                btn.classList.remove('blinking-ui');
+                alert(err?.message || 'Failed to prepare collage');
+            })
+            .downloadDomainJpegsListBase64(subject, grade, domainName, worksheetType, standard);
+    });
+}
+
+// Handler: copy TPT description for domain using AI generator
+function onDomainCopyClick(ev) {
+    ev.preventDefault();
+    const btn = ev.currentTarget;
+    const domainName = btn.dataset.domain || '';
+    const { subject, standard, grade } = getFiltersSafe();
+
+    const codes = (window.domainCodesMap && window.domainCodesMap[domainName]) || [];
+    if (!codes.length) return alert('No lessons found for this domain.');
+
+    if (!(window.google && google && google.script && google.script.run)) {
+        return alert('Not available in this environment.');
+    }
+
+    btn.disabled = true;
+    btn.classList.add('blinking-ui');
+
+    // 1) get lessonsState
+    google.script.run
+        .withSuccessHandler((lessonsState) => {
+            // 2) ask server to produce AI text
+            google.script.run
+                .withSuccessHandler((aiText) => {
+                    try {
+                        if (!aiText) { alert('No AI output returned'); return; }
+                        if (navigator.clipboard?.writeText) {
+                            navigator.clipboard.writeText(aiText);
+                        } else {
+                            const ta = document.createElement('textarea');
+                            ta.value = aiText;
+                            document.body.appendChild(ta);
+                            ta.select(); try { document.execCommand('copy'); } catch (e) {}
+                            document.body.removeChild(ta);
+                        }
+                        btn.title = 'Copied';
+                        setTimeout(() => { btn.title = 'Copy TPT description (AI)'; }, 1200);
+                    } finally {
+                        btn.disabled = false;
+                        btn.classList.remove('blinking-ui');
+                    }
+                })
+                .withFailureHandler((err) => {
+                    btn.disabled = false;
+                    btn.classList.remove('blinking-ui');
+                    alert(err?.message || 'Failed to generate AI text');
+                })
+                .generateBundleDescriptionFromPrompt(subject, standard, grade, domainName, codes, lessonsState);
+        })
+        .withFailureHandler((err) => {
+            btn.disabled = false;
+            btn.classList.remove('blinking-ui');
+            alert(err?.message || 'Could not load lessons state');
+        })
+        .getLessonsWithState();
+}
+
+/*
+    Placeholder for collage renderer. Copy the collage compose/export code from Bundle.html
+    into this function verbatim so collages created here match the previous Bundle panel.
+*/
+window.renderDomainCollageFromBase64List = async function ({ images, domain, subject, standard, grade, worksheetType }) {
+    try {
+        if (!images || !Array.isArray(images) || images.length === 0) return alert('No images available for collage');
+
+        // Load images into Image objects
+        const imgs = await Promise.all(images.map(item => new Promise((res) => {
+            const img = new Image();
+            img.onload = () => res({ img, name: item.name });
+            img.onerror = () => res(null);
+            img.src = 'data:image/jpeg;base64,' + (item.data || item || '');
+        })));
+        const valid = imgs.filter(Boolean);
+        if (!valid.length) return alert('Failed to load images for collage');
+
+        // Create canvas and drawing context
+        const canvas = document.createElement('canvas');
+        canvas.width = 1000;
+        canvas.height = 1000;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Layout constants (kept same as Bundle implementation)
+        const MIN_CELL = 280;
+        const MAX_NEG_OVERLAP_X = 0.5;
+        const MAX_NEG_OVERLAP_Y = 0.55;
+        const STAGGER_ROWS = 0.5;
+        const staggerEnabled = false;
+        const count = valid.length;
+
+        const headerY = Math.floor(canvas.height * 0.2);
+        const footerY = Math.floor(canvas.height * 0.8);
+        const LR_MARGIN = Math.max(12, Math.floor(canvas.width * 0.03));
+        const TB_MARGIN = Math.max(6, Math.floor(canvas.height * 0.015));
+        const contentLeft = LR_MARGIN;
+        const contentRight = canvas.width - LR_MARGIN;
+        const contentTop = headerY + TB_MARGIN;
+        const contentBottom = footerY - TB_MARGIN;
+        const availableGridHeight = Math.max(0, contentBottom - contentTop);
+
+        // Special layout for 5 tiles
+        if (count === 5) {
+            const innerWidth = Math.max(0, contentRight - contentLeft);
+            let corner = Math.floor(Math.min((innerWidth - 20) / 2, (availableGridHeight - 20) / 2));
+            corner = Math.max(MIN_CELL, Math.min(corner, 400));
+            const cw = corner; const ch = corner;
+            const centerX = Math.floor(contentLeft + (innerWidth - cw) / 2);
+            const centerY = Math.floor(contentTop + (availableGridHeight - ch) / 2);
+            const positions = [
+                { x: contentLeft, y: contentTop },
+                { x: contentRight - cw, y: contentTop },
+                { x: contentLeft, y: contentBottom - ch },
+                { x: contentRight - cw, y: contentBottom - ch },
+                { x: centerX, y: centerY }
+            ];
+
+            for (let i = 0; i < 5; i++) {
+                const im = valid[i].img;
+                const pos = positions[i];
+                try{
+                    const shadowPad = Math.max(8, Math.floor(Math.min(cw, ch) * 0.03));
+                    const shadowX = pos.x - shadowPad; const shadowY = pos.y - shadowPad;
+                    const shadowW = cw + shadowPad*2; const shadowH = ch + shadowPad*2;
+                    ctx.save(); ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.filter = 'blur(' + Math.max(4, Math.floor(Math.min(cw, ch) * 0.02)) + 'px)';
+                    const rad = Math.max(6, Math.floor(Math.min(shadowW,shadowH)*0.03));
+                    ctx.beginPath(); ctx.moveTo(shadowX + rad, shadowY); ctx.lineTo(shadowX + shadowW - rad, shadowY);
+                    ctx.quadraticCurveTo(shadowX + shadowW, shadowY, shadowX + shadowW, shadowY + rad);
+                    ctx.lineTo(shadowX + shadowW, shadowY + shadowH - rad); ctx.quadraticCurveTo(shadowX + shadowW, shadowY + shadowH, shadowX + shadowW - rad, shadowY + shadowH);
+                    ctx.lineTo(shadowX + rad, shadowY + shadowH); ctx.quadraticCurveTo(shadowX, shadowY + shadowH, shadowX, shadowY + shadowH - rad);
+                    ctx.lineTo(shadowX, shadowY + rad); ctx.quadraticCurveTo(shadowX, shadowY, shadowX + rad, shadowY); ctx.closePath(); ctx.fill(); ctx.restore();
+                }catch(e){}
+
+                const scale = Math.min(cw / im.width, ch / im.height);
+                const iw = im.width * scale; const ih = im.height * scale;
+                const ix = pos.x + Math.floor((cw - iw) / 2);
+                const iy = pos.y + Math.floor((ch - ih) / 2);
+                ctx.drawImage(im, ix, iy, iw, ih);
+                try{
+                    const strokeWidth = Math.max(1, Math.floor(Math.min(iw,ih) * 0.025));
+                    ctx.save(); ctx.lineWidth = strokeWidth; ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+                    const br = Math.max(4, Math.floor(Math.min(iw,ih) * 0.03));
+                    ctx.beginPath(); ctx.moveTo(ix + br, iy); ctx.lineTo(ix + iw - br, iy); ctx.quadraticCurveTo(ix + iw, iy, ix + iw, iy + br);
+                    ctx.lineTo(ix + iw, iy + ih - br); ctx.quadraticCurveTo(ix + iw, iy + ih, ix + iw - br, iy + ih);
+                    ctx.lineTo(ix + br, iy + ih); ctx.quadraticCurveTo(ix, iy + ih, ix, iy + ih - br); ctx.lineTo(ix, iy + br);
+                    ctx.quadraticCurveTo(ix, iy, ix + br, iy); ctx.closePath(); ctx.stroke(); ctx.restore();
+                }catch(e){}
+            }
+            // draw header/footer later
+        }
+
+        // Grid layout fallback
+        let cols = Math.max(1, Math.ceil(Math.sqrt(count)));
+        let rows = (count > 10) ? 3 : 2;
+        if (count <= 2) rows = 1;
+        if (count === 3) rows = 1;
+        if (count === 4) rows = 1;
+        if (rows > count) rows = 1;
+        if (rows * Math.ceil(count/rows) < count) rows = Math.min(3, Math.ceil(count / Math.floor(Math.sqrt(count))));
+        if (rows <= 0) rows = Math.ceil(count / cols);
+        rows = Math.min(rows, count);
+        cols = Math.ceil(count / rows);
+
+        let cellW = MIN_CELL; let cellH = MIN_CELL;
+        if (count === 2) { cellW = 455; cellH = 455; }
+        if (count === 3) { cellW = 290; cellH = 290; }
+        if (count >= 16) {
+            const step = Math.floor((count - 16) / 3);
+            const computed = 260 - step * 40;
+            const size = Math.max(120, computed);
+            cellW = size; cellH = size;
+        }
+
+        let innerWidth = Math.max(0, contentRight - contentLeft);
+        let gapX = cols > 1 ? Math.floor((innerWidth - cols * cellW) / (cols - 1)) : 0;
+        let gapY = rows > 1 ? Math.floor((availableGridHeight - rows * cellH) / (rows - 1)) : 0;
+        const minGapX = -Math.floor(cellW * MAX_NEG_OVERLAP_X);
+        const minGapY = -Math.floor(cellH * MAX_NEG_OVERLAP_Y);
+        gapX = Math.max(gapX, minGapX);
+        gapY = Math.max(gapY, minGapY);
+
+        while (rows > 1 && (rows * cellH + (rows - 1) * gapY) > availableGridHeight) {
+            cols = Math.min(count, cols + 1);
+            rows = Math.ceil(count / cols);
+            innerWidth = Math.max(0, contentRight - contentLeft);
+            gapX = cols > 1 ? Math.floor((innerWidth - cols * cellW) / (cols - 1)) : 0;
+            gapX = Math.max(gapX, minGapX);
+            gapY = rows > 1 ? Math.floor((availableGridHeight - rows * cellH) / (rows - 1)) : 0;
+            gapY = Math.max(gapY, minGapY);
+        }
+
+        const overlapMode = gapX < 0 || gapY < 0;
+
+        // try to draw optional background from server
+        try {
+            const bgB64 = await new Promise((res) => {
+                try {
+                    google.script.run.withSuccessHandler(res).withFailureHandler(() => res(null)).getAIBgBase64();
+                } catch (e) { res(null); }
+            });
+            if (bgB64) {
+                await new Promise((res) => {
+                    const bg = new Image();
+                    bg.onload = () => { try { ctx.drawImage(bg, 0, 0, canvas.width, canvas.height); } catch (e) {} ; res(); };
+                    bg.onerror = () => res();
+                    bg.src = 'data:image/jpeg;base64,' + bgB64;
+                });
+            }
+        } catch (e) { /* ignore */ }
+
+        const itemsPerRow = [];
+        const baseCount = Math.floor(count / rows);
+        let extra = count % rows;
+        for (let r=0;r<rows;r++){
+            itemsPerRow[r] = baseCount + (extra > 0 ? 1 : 0);
+            if (extra > 0) extra--;
+        }
+
+        const rowCellW = new Array(rows).fill(cellW);
+        const rowCellH = new Array(rows).fill(cellH);
+        for (let r=0;r<rows;r++){
+            const items = itemsPerRow[r] || 0;
+            if (items <= 0) continue;
+            const w = Math.floor((innerWidth - Math.max(0, items-1) * gapX) / items);
+            rowCellW[r] = Math.max(cellW, w);
+            const possibleH = Math.floor((availableGridHeight - Math.max(0, rows-1) * gapY) / rows);
+            rowCellH[r] = Math.max(cellH, possibleH);
+        }
+
+        const startX = contentLeft;
+
+        let idx = 0;
+        for (let rr = 0; rr < rows; rr++){
+            const items = itemsPerRow[rr] || 0;
+            const cw = rowCellW[rr];
+            const ch = rowCellH[rr];
+            for (let cc = 0; cc < items; cc++){
+                const i = idx++;
+                const baseX = startX + cc * (cw + gapX);
+                const baseY = contentTop + rr * (ch + gapY);
+                const staggerOffset = (overlapMode && staggerEnabled) ? - (rr % 2) * Math.floor(Math.abs(gapX) * STAGGER_ROWS) : 0;
+                const xRaw = baseX + staggerOffset;
+                const x = Math.max(contentLeft, xRaw);
+                const y = baseY;
+                const im = valid[i].img;
+                const scale = Math.min(cw / im.width, ch / im.height);
+                const iw = im.width * scale; const ih = im.height * scale;
+                const ix = x + (cw - iw) / 2; const iy = y + (ch - ih) / 2;
+
+                try{
+                    const shadowPad = Math.max(8, Math.floor(Math.min(cw, ch) * 0.03));
+                    const shadowX = ix - shadowPad; const shadowY = iy - shadowPad;
+                    const shadowW = iw + shadowPad*2; const shadowH = ih + shadowPad*2;
+                    ctx.save(); ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.filter = 'blur(' + Math.max(4, Math.floor(Math.min(cw, ch) * 0.02)) + 'px)';
+                    const rad = Math.max(6, Math.floor(Math.min(shadowW,shadowH)*0.03));
+                    ctx.beginPath(); ctx.moveTo(shadowX + rad, shadowY); ctx.lineTo(shadowX + shadowW - rad, shadowY);
+                    ctx.quadraticCurveTo(shadowX + shadowW, shadowY, shadowX + shadowW, shadowY + rad);
+                    ctx.lineTo(shadowX + shadowW, shadowY + shadowH - rad); ctx.quadraticCurveTo(shadowX + shadowW, shadowY + shadowH, shadowX + shadowW - rad, shadowY + shadowH);
+                    ctx.lineTo(shadowX + rad, shadowY + shadowH); ctx.quadraticCurveTo(shadowX, shadowY + shadowH, shadowX, shadowY + shadowH - rad);
+                    ctx.lineTo(shadowX, shadowY + rad); ctx.quadraticCurveTo(shadowX, shadowY, shadowX + rad, shadowY); ctx.closePath(); ctx.fill(); ctx.restore();
+                }catch(e){}
+
+                ctx.drawImage(im, ix, iy, iw, ih);
+                try{
+                    const strokeWidth = Math.max(1, Math.floor(Math.min(iw,ih) * 0.025));
+                    ctx.save(); ctx.lineWidth = strokeWidth; ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+                    const br = Math.max(4, Math.floor(Math.min(iw,ih) * 0.03));
+                    ctx.beginPath(); ctx.moveTo(ix + br, iy); ctx.lineTo(ix + iw - br, iy); ctx.quadraticCurveTo(ix + iw, iy, ix + iw, iy + br);
+                    ctx.lineTo(ix + iw, iy + ih - br); ctx.quadraticCurveTo(ix + iw, iy + ih, ix + iw - br, iy + ih);
+                    ctx.lineTo(ix + br, iy + ih); ctx.quadraticCurveTo(ix, iy + ih, ix, iy + ih - br); ctx.lineTo(ix, iy + br);
+                    ctx.quadraticCurveTo(ix, iy, ix + br, iy); ctx.closePath(); ctx.stroke(); ctx.restore();
+                }catch(e){}
+            }
+        }
+
+        // Draw header and footer
+        try {
+            const maxTextWidth = Math.max(200, canvas.width - LR_MARGIN * 2);
+            const collageTextSettings = {
+                titleOffsetX: 0,
+                titleOffsetY: 60,
+                footerOffsetX: 0,
+                footerOffsetY: -28,
+                titleColor: '#ffffff',
+                titleSize: '60',
+                footerColor: '#ffffff',
+                footerSize: '10'
+            };
+            const rawTitle = String(domain || 'Bundle').trim();
+            const titleLines = rawTitle.indexOf('\n') !== -1 ? rawTitle.split('\n').map(s=>s.trim()).filter(Boolean) : [rawTitle];
+            const titleColor = collageTextSettings.titleColor || '#ffffff';
+            const titleOffsetX = parseInt(collageTextSettings.titleOffsetX || 0, 10) || 0;
+            let titleOffsetY = parseInt(collageTextSettings.titleOffsetY || 55, 10) || 0;
+            if ([2,3,4].includes(Number(count))) { titleOffsetY = 90; }
+            const rectW = 990; const rectH = 140; const rectTop = 30;
+            const rectCenterX = Math.floor(canvas.width / 2);
+            const rectCenterY = Math.floor(rectTop + rectH / 2);
+            let titlePct = Math.max(10, Math.min(200, parseFloat(collageTextSettings.titleSize || '60')));
+            let titleFont = Math.max(8, Math.floor(canvas.width * (titlePct / 100)));
+            function setTitleFont(f){ ctx.font = 'bold ' + Math.max(8, Math.floor(f)) + 'px "DIN Condensed", sans-serif'; }
+            setTitleFont(titleFont);
+            function fitsTitle(f){ setTitleFont(f); const estLeading = Math.max(6, Math.floor(f * 1.05)); const totalH = estLeading * titleLines.length; if (totalH > rectH - 8) return false; for (let ln of titleLines) if (ctx.measureText(ln).width > rectW - 8) return false; return true; }
+            while (titleFont > 8 && !fitsTitle(titleFont)) titleFont -= 2;
+            ctx.save(); ctx.fillStyle = titleColor || '#ffffff'; ctx.textAlign = 'center'; setTitleFont(titleFont);
+            ctx.textBaseline = 'middle';
+            const offX = titleOffsetX; const offY = titleOffsetY;
+            const titleX = rectCenterX + offX;
+            const centerY = rectCenterY + offY;
+            const estLeading = Math.max(6, Math.floor(titleFont * 1.05));
+            if (titleLines.length === 1) {
+                ctx.fillText(titleLines[0], titleX, centerY);
+            } else {
+                const y1 = centerY - Math.floor(estLeading/2);
+                const y2 = centerY + Math.floor(estLeading/2);
+                ctx.fillText(titleLines[0], titleX, y1);
+                ctx.fillText(titleLines[1], titleX, y2);
+            }
+            ctx.textBaseline = 'alphabetic';
+            ctx.restore();
+
+            const subj = String(subject || '').trim();
+            const grd = String(grade || '').trim();
+            const std = String(standard || '').trim();
+            const questionsTotal = Math.max(0, count) * 35;
+            const footerParts = [];
+            if (grd) footerParts.push(grd);
+            if (std) footerParts.push(std);
+            if (subj) footerParts.push(subj);
+            footerParts.push('Questions: ' + questionsTotal);
+            const footerText = footerParts.join(' • ');
+            const footerColor = collageTextSettings.footerColor || '#ffffff';
+            let footerPct = Math.max(1, Math.min(50, parseFloat(collageTextSettings.footerSize || '2.8')));
+            let footerFont = Math.max(8, Math.floor(canvas.height * (footerPct / 100)));
+            function setFooterFont(f){ ctx.font = '600 ' + Math.max(8, Math.floor(f)) + 'px "DIN Condensed", sans-serif'; }
+            ctx.save(); ctx.fillStyle = footerColor || '#ffffff'; ctx.textAlign = 'center'; setFooterFont(footerFont);
+            while (footerFont > 8 && ctx.measureText(footerText).width > maxTextWidth) { footerFont -= 1; setFooterFont(footerFont); }
+            const footerOffsetX = parseInt(collageTextSettings.footerOffsetX || 0,10) || 0;
+            const footerOffsetY = parseInt(collageTextSettings.footerOffsetY || -30,10) || 0;
+            const fX = Math.floor(canvas.width / 2) + footerOffsetX;
+            const fY = Math.floor(footerY + (canvas.height - footerY) / 2) + 6 + footerOffsetY;
+            ctx.fillStyle = footerColor || '#ffffff';
+            ctx.fillText(footerText, fX, fY);
+            ctx.restore();
+        } catch (e) {
+            console.warn('Failed to draw header/footer text for collage', e);
+        }
+
+        // Export JPEG
+        const quality = 0.92;
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+        // Try to save thumbnail to Instructions folder on server before triggering local download.
+        // If the server call fails, we fall back to direct download so user isn't blocked.
+        try {
+            const fileNameHint = (domain || 'domain') + '_COLLAGE';
+            google.script.run.withSuccessHandler(function(res) {
+                // On success or partial success, still trigger local download so user gets the file.
+                const a = document.createElement('a');
+                a.href = dataUrl;
+                const safeDomain = (domain || 'domain').replace(/[^A-Za-z0-9]+/g, '_');
+                a.download = safeDomain + '-COLLAGE.jpg';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }).withFailureHandler(function(err) {
+                // Failure — fallback to direct download
+                const a = document.createElement('a');
+                a.href = dataUrl;
+                const safeDomain = (domain || 'domain').replace(/[^A-Za-z0-9]+/g, '_');
+                a.download = safeDomain + '-COLLAGE.jpg';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }).saveDomainThumbnailToInstructions(dataUrl, subject, grade, standard || domain, fileNameHint);
+        } catch (e) {
+            // If google.script.run isn't available or another client error occurs, fallback to direct download
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            const safeDomain = (domain || 'domain').replace(/[^A-Za-z0-9]+/g, '_');
+            a.download = safeDomain + '-COLLAGE.jpg';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+    } catch (e) {
+        alert('Failed to create collage: ' + (e && e.message ? e.message : e));
+    }
+};
+        
+        // Profile dropdown functionality
+        profileButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileDropdown.classList.toggle('show');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!profileDropdown.contains(e.target) && !profileButton.contains(e.target)) {
+                profileDropdown.classList.remove('show');
+            }
+        });
+        
+        // Logout functionality
+        logoutButton.addEventListener('click', () => {
+            if (confirm('Are you sure you want to logout?')) {
+                logout();
+            }
+        });
+
+        // Payout Method modal controls
+        const payoutModal = document.getElementById('payoutModal');
+        const payoutView = document.getElementById('payoutView');
+        const payoutForm = document.getElementById('payoutForm');
+        const payoutCancelBtn = document.getElementById('payoutCancelBtn');
+        const payoutCancelEditBtn = document.getElementById('payoutCancelEditBtn');
+        const payoutEditBtn = document.getElementById('payoutEditBtn');
+        const payoutMethodButton = document.getElementById('payoutMethodButton');
+
+        function showPayoutView() {
+            payoutView.classList.remove('hidden');
+            payoutForm.classList.add('hidden');
+        }
+
+        function showPayoutForm() {
+            payoutView.classList.add('hidden');
+            payoutForm.classList.remove('hidden');
+        }
+
+        payoutMethodButton.addEventListener('click', () => {
+            // Load existing payout details
+            google.script.run
+                .withSuccessHandler(details => {
+                    if (details && (details.bank || details.branch || details.accountNumber || details.accountName)) {
+                        // Show view mode with existing details
+                        document.getElementById('viewBank').textContent = details.bank || '-';
+                        document.getElementById('viewBranch').textContent = details.branch || '-';
+                        document.getElementById('viewAccountNumber').textContent = details.accountNumber || '-';
+                        document.getElementById('viewAccountName').textContent = details.accountName || '-';
+                        showPayoutView();
+                    } else {
+                        // No details exist, show form for adding
+                        payoutForm.reset();
+                        showPayoutForm();
+                    }
+                    payoutModal.style.display = 'flex';
+                    profileDropdown.classList.remove('show'); // Close dropdown
+                })
+                .withFailureHandler(err => {
+                    showMessage('Failed to load payout details: ' + err.message, 'error');
+                })
+                .getPayoutDetails(currentUser.username);
+        });
+
+        payoutEditBtn.addEventListener('click', () => {
+            // Populate form with current values and switch to edit mode
+            document.getElementById('bank').value = document.getElementById('viewBank').textContent !== '-' ? document.getElementById('viewBank').textContent : '';
+            document.getElementById('branch').value = document.getElementById('viewBranch').textContent !== '-' ? document.getElementById('viewBranch').textContent : '';
+            document.getElementById('accountNumber').value = document.getElementById('viewAccountNumber').textContent !== '-' ? document.getElementById('viewAccountNumber').textContent : '';
+            document.getElementById('accountName').value = document.getElementById('viewAccountName').textContent !== '-' ? document.getElementById('viewAccountName').textContent : '';
+            showPayoutForm();
+        });
+
+        payoutCancelBtn.addEventListener('click', () => {
+            payoutModal.style.display = 'none';
+        });
+
+        payoutCancelEditBtn.addEventListener('click', () => {
+            // Go back to view mode without saving
+            showPayoutView();
+        });
+
+        payoutForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(payoutForm);
+            const bank = formData.get('bank').trim();
+            const branch = formData.get('branch').trim();
+            const accountNumber = formData.get('accountNumber').trim();
+            const accountName = formData.get('accountName').trim();
+
+            google.script.run
+                .withSuccessHandler(success => {
+                    if (success) {
+                        showMessage('Payout details saved successfully!', 'success');
+                        // Update view with new values
+                        document.getElementById('viewBank').textContent = bank || '-';
+                        document.getElementById('viewBranch').textContent = branch || '-';
+                        document.getElementById('viewAccountNumber').textContent = accountNumber || '-';
+                        document.getElementById('viewAccountName').textContent = accountName || '-';
+                        showPayoutView();
+                        // Close modal after showing success message
+                        setTimeout(() => {
+                            payoutModal.style.display = 'none';
+                        }, 1500);
+                    } else {
+                        showMessage('Failed to save payout details.', 'error');
+                    }
+                })
+                .withFailureHandler(err => {
+                    showMessage('Failed to save payout details: ' + err.message, 'error');
+                })
+                .updatePayoutDetails(currentUser.username, bank, branch, accountNumber, accountName);
+        });
+
+                // Prompt submenu (Lesson & Bundle) buttons (copy to clipboard)
+                const promptItem = document.getElementById('promptItem');
+                const promptsSubmenu = document.getElementById('promptsSubmenu');
+                const lessonPromptSub = document.getElementById('lessonPromptSub');
+                const bundlePromptSub = document.getElementById('bundlePromptSub');
+
+                function copyRichTextToClipboard(html, sourceBtn) {
+                    if (!html) { showMessage('No content available to copy.', 'error'); return; }
+                    const showCopiedState = (btn) => {
+                        if (!btn) return;
+                        const orig = btn.innerHTML;
+                        btn.dataset._orig = orig;
+                        btn.innerHTML = 'Copied!';
+                        btn.disabled = true;
+                        setTimeout(() => {
+                            btn.innerHTML = btn.dataset._orig || orig;
+                            btn.disabled = false;
+                            delete btn.dataset._orig;
+                        }, 2000);
+                    };
+
+                    try {
+                        const blob = new Blob([html], { type: 'text/html' });
+                        const clipboardItem = new ClipboardItem({ 'text/html': blob });
+                        navigator.clipboard.write([clipboardItem]).then(() => {
+                            showCopiedState(sourceBtn);
+                            showMessage('Description copied to clipboard.', 'success');
+                        }).catch(() => {
+                            showMessage('Failed to copy rich text to clipboard.', 'error');
+                        });
+                    } catch (e) {
+                        showMessage('Failed to copy rich text: ' + e.message, 'error');
+                    }
+                }
+
+                function copyTextToClipboard(text, sourceBtn) {
+                    if (!text) { showMessage('No prompt available to copy.', 'error'); return; }
+                    const showCopiedState = (btn) => {
+                        if (!btn) return;
+                        const orig = btn.innerHTML;
+                        btn.dataset._orig = orig;
+                        btn.innerHTML = 'Copied!';
+                        btn.disabled = true;
+                        setTimeout(() => {
+                            btn.innerHTML = btn.dataset._orig || orig;
+                            btn.disabled = false;
+                            delete btn.dataset._orig;
+                        }, 2000);
+                    };
+
+                    const preview = String(text).trim().slice(0, 120).replace(/\s+/g,' ');
+
+                    // Use the Clipboard API when available
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).then(() => {
+                            showCopiedState(sourceBtn);
+                            showMessage('Prompt copied to clipboard: "' + preview + (preview.length < text.length ? '…' : '') + '"', 'success');
+                        }).catch(() => {
+                            showMessage('Failed to copy to clipboard.', 'error');
+                        });
+                    } else {
+                        // Fallback: create a temporary textarea
+                        const ta = document.createElement('textarea');
+                        ta.value = text;
+                        document.body.appendChild(ta);
+                        ta.select();
+                        try {
+                            const ok = document.execCommand('copy');
+                            if (ok) {
+                                showCopiedState(sourceBtn);
+                                showMessage('Prompt copied to clipboard: "' + preview + (preview.length < text.length ? '…' : '') + '"', 'success');
+                            } else {
+                                showMessage('Failed to copy to clipboard.', 'error');
+                            }
+                        } catch (e) { showMessage('Failed to copy to clipboard.', 'error'); }
+                        ta.remove();
+                    }
+                }
+
+                // show/hide prompts submenu on hover/focus (keyboard accessible)
+                if (promptItem && promptsSubmenu) {
+                    let hideTimer = null;
+                    const showPrompts = () => {
+                        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+                        // Align submenu vertically with the parent menu item
+                        try {
+                            const top = promptItem.offsetTop || 0;
+                            promptsSubmenu.style.top = top + 'px';
+                        } catch (e) { /* ignore */ }
+                        promptsSubmenu.style.display = 'block';
+                        promptsSubmenu.setAttribute('aria-hidden','false');
+                    };
+                    const scheduleHidePrompts = (d = 220) => { if (hideTimer) clearTimeout(hideTimer); hideTimer = setTimeout(() => { promptsSubmenu.style.display = 'none'; promptsSubmenu.setAttribute('aria-hidden','true'); hideTimer = null; }, d); };
+                    promptItem.addEventListener('mouseenter', (e) => { e.stopPropagation(); showPrompts(); });
+                    promptItem.addEventListener('mouseleave', (e) => { scheduleHidePrompts(); });
+                    promptItem.addEventListener('focus', showPrompts);
+                    // Allow submenu to stay visible when hovered
+                    promptsSubmenu.addEventListener('mouseenter', () => { if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } promptsSubmenu.style.display = 'block'; });
+                    promptsSubmenu.addEventListener('mouseleave', () => { scheduleHidePrompts(); });
+                }
+
+                if (lessonPromptSub) {
+                    lessonPromptSub.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const btn = e.currentTarget;
+                        // Blink the item while waiting for server
+                            try { btn.classList.add('blinking-ui'); } catch (err) {}
+                            // Use the same feedback UI as other buttons by passing the element
+                            google.script.run
+                                .withSuccessHandler(text => { try { btn.classList.remove('blinking-ui'); } catch (err) {} ; copyTextToClipboard(text, btn); })
+                                .withFailureHandler(err => { try { btn.classList.remove('blinking-ui'); } catch (err) {} ; showMessage('Failed to fetch lesson prompt: ' + (err && err.message), 'error'); })
+                                .getTutorialPrompt('lesson');
+                    });
+                    lessonPromptSub.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); lessonPromptSub.click(); } });
+                }
+
+                if (bundlePromptSub) {
+                    bundlePromptSub.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const btn = e.currentTarget;
+                        // Blink the item while waiting for server
+                        try { btn.classList.add('blinking-ui'); } catch (err) {}
+                        google.script.run
+                            .withSuccessHandler(text => { try { btn.classList.remove('blinking-ui'); } catch (err) {} ; copyTextToClipboard(text, btn); })
+                            .withFailureHandler(err => { try { btn.classList.remove('blinking-ui'); } catch (err) {} ; showMessage('Failed to fetch bundle prompt: ' + (err && err.message), 'error'); })
+                            .getTutorialPrompt('bundle');
+                    });
+                    bundlePromptSub.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bundlePromptSub.click(); } });
+                }
+
+                                // Tutorials submenu: load items from server and show on hover/focus
+                                const tutorialsItem = document.getElementById('tutorialsItem');
+                                const tutorialsSubmenu = document.getElementById('tutorialsSubmenu');
+                                let tutorialsLoaded = false;
+                                let tutorialsHideTimer = null;
+
+                                function renderTutorials(items) {
+                                    tutorialsSubmenu.innerHTML = '';
+                                    if (!items || !items.length) {
+                                        tutorialsSubmenu.innerHTML = '<div class="tutorial-empty">No tutorials found</div>';
+                                        return;
+                                    }
+                                    items.forEach(t => {
+                                        const url = (t.url || '').trim();
+                                        if (url) {
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.target = '_blank';
+                                            a.rel = 'noopener noreferrer';
+                                            a.textContent = t.name;
+                                            a.className = 'tutorial-link';
+                                            // Prevent the parent dropdown from immediately closing when clicked
+                                            a.addEventListener('click', function(ev) { ev.stopPropagation(); });
+                                            a.addEventListener('mousedown', function(ev) { ev.stopPropagation(); });
+                                            tutorialsSubmenu.appendChild(a);
+                                        } else {
+                                            const span = document.createElement('div');
+                                            span.className = 'tutorial-link disabled';
+                                            span.textContent = t.name + ' (no link)';
+                                            tutorialsSubmenu.appendChild(span);
+                                        }
+                                    });
+                                }
+
+                                function loadTutorialsOnce() {
+                                    if (tutorialsLoaded) return;
+                                    tutorialsLoaded = true;
+                                    // parent Tutorials item should blink until load completes
+                                    const parentItem = document.querySelector('.dropdown-item.dropdown-tutorials');
+                                    if (parentItem) parentItem.classList.add('blinking-ui');
+                                    // show loading state text (spinner is hidden by CSS)
+                                    if (tutorialsSubmenu) tutorialsSubmenu.innerHTML = '<div class="tutorial-loading">Loading...</div>';
+                                    google.script.run
+                                        .withSuccessHandler(items => {
+                                            if (parentItem) parentItem.classList.remove('blinking-ui');
+                                            renderTutorials(items);
+                                        })
+                                        .withFailureHandler(err => {
+                                            if (parentItem) parentItem.classList.remove('blinking-ui');
+                                            console.error('Failed to load tutorials:', err);
+                                            renderTutorials([]);
+                                        })
+                                        .getTutorials();
+                                }
+                // hoisted helpers so both parent item and submenu can call them
+                function showTutorials() {
+                    if (tutorialsHideTimer) { clearTimeout(tutorialsHideTimer); tutorialsHideTimer = null; }
+                    if (!tutorialsSubmenu) return;
+                    tutorialsSubmenu.style.display = 'block';
+                    tutorialsSubmenu.setAttribute('aria-hidden', 'false');
+                    loadTutorialsOnce();
+                }
+
+                function scheduleHideTutorials(delay = 220) {
+                    if (!tutorialsSubmenu) return;
+                    if (tutorialsHideTimer) clearTimeout(tutorialsHideTimer);
+                    tutorialsHideTimer = setTimeout(() => {
+                        tutorialsSubmenu.style.display = 'none';
+                        tutorialsSubmenu.setAttribute('aria-hidden', 'true');
+                        tutorialsHideTimer = null;
+                    }, delay);
+                }
+
+                if (tutorialsItem) {
+                    tutorialsItem.addEventListener('mouseenter', (e) => { e.stopPropagation(); showTutorials(); });
+                    tutorialsItem.addEventListener('mouseleave', (e) => { scheduleHideTutorials(); });
+                    // keyboard accessible: show on focus, but do NOT hide immediately on blur (allow user to tab into submenu)
+                    tutorialsItem.addEventListener('focus', showTutorials);
+                }
+                if (tutorialsSubmenu) {
+                    tutorialsSubmenu.addEventListener('mouseenter', () => { if (tutorialsHideTimer) { clearTimeout(tutorialsHideTimer); tutorialsHideTimer = null; } tutorialsSubmenu.style.display = 'block'; tutorialsSubmenu.setAttribute('aria-hidden','false'); });
+                    tutorialsSubmenu.addEventListener('mouseleave', () => { scheduleHideTutorials(); });
+                }
+
+        // Open or create the TEMPLATES folder
+        const templateButton = document.getElementById('templateButton');
+        if (templateButton) {
+          templateButton.addEventListener('click', e => {
+            e.stopPropagation();
+            google.script.run
+              .withSuccessHandler(url => window.open(url, '_blank'))
+              .getOrCreateTemplatesFolder();
+          });
+        }
+        
+        function logout() {
+            isLoggedIn = false;
+            currentUser = { username: '', accountName: '', email: '', earnings: 0 };
+            document.body.classList.remove('app-mode');
+            profileDropdown.classList.remove('show');
+            
+            // Clear local storage
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+            
+            // Reset form
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            hideMessage();
+        }
+        
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideMessage();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showMessage('Please enter both username and password.');
+                return;
+            }
+            
+            setLoading(true, 'Verifying credentials...');
+            
+            try {
+                // Call Google Apps Script function to authenticate
+                google.script.run
+                    .withSuccessHandler(handleLoginSuccess)
+                    .withFailureHandler(handleLoginError)
+                    .authenticateUser(username, password);
+            } catch (error) {
+                setLoading(false);
+                showMessage('An error occurred. Please try again.');
+            }
+        });
+        
+        function handleLoginSuccess(result) {
+            if (result.success) {
+                setLoading(true, 'Checking email authorization...');
+                
+                // Store username for later use
+                currentUser.username = document.getElementById('username').value.trim();
+                
+                // Check if user's email is authorized and get account name
+                google.script.run
+                    .withSuccessHandler(handleEmailCheck)
+                    .withFailureHandler(handleEmailCheckError)
+                    .checkEmailAuthorization();
+            } else {
+                setLoading(false);
+                showMessage(result.message || 'Invalid username or password.');
+            }
+        }
+        
+        function handleLoginError(error) {
+            setLoading(false);
+            showMessage('Login failed: ' + (error.message || 'Please try again.'));
+        }
+        
+        function handleEmailCheck(result) {
+            if (result.authorized) {
+                currentUser.email = result.email || '';
+                setLoading(true, 'Loading user account...');
+                
+                // Get user account name from data sheet
+                google.script.run
+                    .withSuccessHandler(handleAccountData)
+                    .withFailureHandler(handleAccountDataError)
+                    .getUserAccount();
+            } else {
+                setLoading(false);
+                showMessage('Access denied. Your email is not authorized to use this application.');
+            }
+        }
+        
+        function handleEmailCheckError(error) {
+            setLoading(false);
+            showMessage('Authorization check failed: ' + (error.message || 'Please try again.'));
+        }
+        
+        function handleAccountData(accountName) {
+            currentUser.accountName = accountName || 'Unknown Account';
+            currentUser.earnings = 0; // Initialize without placeholder random
+            
+            setLoading(true, 'Access granted! Loading application...');
+            showMessage('Login successful! Loading application...', 'success');
+            
+            // Update profile with user data
+            updateUserProfile(currentUser);
+
+            // Store session data in local storage
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({
+                username: currentUser.username,
+                accountName: currentUser.accountName,
+                email: currentUser.email // Assuming email is set by checkEmailAuthorization
+            }));
+            
+            // Show main application
+            setTimeout(() => {
+                setLoading(false);
+                showMainApp();
+            }, 1500);
+        }
+        
+        function handleAccountDataError(error) {
+            // Still allow login but with default account name
+            currentUser.accountName = 'Account Name';
+            currentUser.earnings = 0;
+            
+            updateUserProfile(currentUser);
+            
+            setLoading(true, 'Access granted! Loading application...');
+            showMessage('Login successful! Loading application...', 'success');
+
+            // Store session data in local storage even if account data failed
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({
+                username: currentUser.username,
+                accountName: currentUser.accountName,
+                email: currentUser.email
+            }));
+            
+            setTimeout(() => {
+                setLoading(false);
+                showMainApp();
+            }, 1500);
+        }
+
+        // Function to check for existing session on page load
+        function checkSession() {
+            const storedSession = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (storedSession) {
+                const sessionData = JSON.parse(storedSession);
+                currentUser.username = sessionData.username;
+                currentUser.accountName = sessionData.accountName;
+                currentUser.email = sessionData.email;
+
+                // Verify the session with the server (optional but good for security)
+                setLoading(true, "Resuming session...");
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        if (result.authorized) {
+                            updateUserProfile(currentUser);
+                            showMainApp();
+                            setLoading(false);
+                        } else {
+                            logout(); // Session invalid, force re-login
+                            setLoading(false);
+                            showMessage("Session expired or invalid. Please log in again.");
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        logout(); // Error during session verification, force re-login
+                        setLoading(false);
+                        showMessage("Error resuming session. Please log in again.");
+                        console.error("Session verification failed:", error);
+                    })
+                    .checkEmailAuthorization(); // Re-use this function to verify email
+            } else {
+                // No stored session, show login form
+                setLoading(false);
+            }
+        }
+
+        // Call checkSession on page load - with guard to prevent duplicate bindings
+        if (!window.__CHECK_SESSION_BOUND__) {
+            document.addEventListener("DOMContentLoaded", checkSession);
+            window.__CHECK_SESSION_BOUND__ = true;
+        }
+
+        // 🔍 Live lesson search: scroll to row and highlight it (no suggestions)
+        (function () {
+          const box = document.getElementById('lessonSearch');
+          let last = null;
+
+          const normalize = str => str.toLowerCase().replace(/[\s\-]/g, '');
+
+          box.addEventListener('input', e => {
+            const q = normalize(e.target.value);
+            if (last) { last.classList.remove('search-hit'); last = null; }
+            if (!q) return;
+
+            const rows = document.querySelectorAll('#bulkTable tbody tr');
+            const hit = Array.from(rows).find(r => {
+              const cell = r.children[1];
+              return cell && normalize(cell.textContent) === q;
+            });
+
+            if (hit) {
+              hit.classList.add('search-hit');
+              hit.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              last = hit;
+            }
+          });
+        })();
+
+        // Main Application JavaScript (from original index.html)
+        // Replace/Skip modal controls
+        const lessonUrls = {};
+        const replaceModal     = document.getElementById('replaceModal');
+        const modalMessage     = document.getElementById('modalMessage');
+        const modalReplaceBtn  = document.getElementById('modalReplaceBtn');
+        const modalSkipBtn     = document.getElementById('modalSkipBtn');
+        let modalResolve; // to signal choice
+
+        function showReplaceModal(message) {
+            modalMessage.textContent = message;
+            replaceModal.style.display = 'flex';
+            return new Promise(resolve => { modalResolve = resolve; });
+        }
+
+        modalReplaceBtn.addEventListener('click', () => {
+            replaceModal.style.display = 'none';
+            modalResolve('replace');
+        });
+        modalSkipBtn.addEventListener('click', () => {
+            replaceModal.style.display = 'none';
+            modalResolve('skip');
+        });
+        let latestDocUrl = null, latestAnswerKeyUrl = null, progInt;
+        let bulkCancelled = false;
+
+        // Bulk container & spinner refs
+        const bulkTableContainer = document.getElementById('bulkTableContainer');
+        // Recent toggle logic
+        const spinnerBulk = document.getElementById('spinnerBulk');
+        const stopBulkBtn = document.getElementById('btnStopBulk');
+        const bulkDomain = document.getElementById('bulkDomain');
+        const bulkLesson = document.getElementById('bulkLesson');
+        
+        // Populate lesson codes on domain change in Bulk Mode
+        document.getElementById('bulkDomain').addEventListener('change', function () {
+          const domain = this.value;
+          const subject  = document.getElementById('bulkSubject').value;
+          const standard = document.getElementById('bulkStandard').value;
+          const grade    = document.getElementById('bulkGrade').value;
+
+          const lessonDropdown = document.getElementById('bulkLesson');
+          lessonDropdown.innerHTML = '<option value="" disabled selected>Select code</option>';
+
+          if (!domain) { lessonDropdown.disabled = true; return; }
+
+                      // Disable all selects while lesson codes are loading (including the domain select)
+                      if (typeof window.setSelectsDisabledExcept === 'function') window.setSelectsDisabledExcept([], true);
+                    lessonDropdown.disabled = true;
+          google.script.run
+            .withSuccessHandler(codes => {
+              codes.forEach(cd => {
+                const o = document.createElement('option');
+                o.value = o.textContent = cd;
+                lessonDropdown.appendChild(o);
+              });
+                            lessonDropdown.disabled = codes.length === 0;
+                            // Re-enable selects after lesson codes loaded
+                            if (typeof window.setSelectsDisabledExcept === 'function') window.setSelectsDisabledExcept([], false);
+            })
+            .withFailureHandler(err => {
+              console.error('Failed to load lesson codes', err);
+              lessonDropdown.disabled = true;
+                            if (typeof window.setSelectsDisabledExcept === 'function') window.setSelectsDisabledExcept([], false);
+            })
+            .getCodesForSubjectStandardGradeDomain(subject, standard, grade, domain);
+        });
+
+        // Lesson codes are now loaded dynamically from the sheet via getCodesForSubjectStandardGradeDomain
+
+
+        // Show placeholder blinking rows in the main table
+        function showMainPlaceholder() {
+            const container = bulkTableContainer;
+            // build table with Grade + other headers, wrapped in scroll container
+            container.innerHTML = '<div class="table-scroll-container"><table id="bulkTable"><thead><tr>'
+                + '<th>Grade</th>'
+                + '<th>Lesson</th>'
+                + '<th>Worksheet</th>'
+                + '<th>Answer Key</th>'
+                + '<th>Last Edit</th>'
+                + '<th>Package</th>'
+                + '</tr></thead><tbody id="bulkTableBody">';
+            const placeholderRows = 5;
+            for (let i = 0; i < placeholderRows; i++) {
+                container.innerHTML += '<tr class="blinking">'
+                    + '<td>&nbsp;</td>'.repeat(6)
+                    + '</tr>';
+            }
+            container.innerHTML += '</tbody></table></div>';
+        }
+
+        /**
+         * Adds a row placeholder for a lesson code or a bundle.
+         */
+        function addTableRow(tbody, code, grade, workflowStatus = 'generate') {
+            // --- Skip adding rows where code contains "Bundle" (for main table only) ---
+            if (/Bundle/i.test(code)) return; // Skip rows where code includes "Bundle"
+            // Bundle rows are handled only in the bundle panel, not shown in main table.
+            const row = document.createElement('tr');
+            row.id = `row_${grade}_${code}`;
+            row.innerHTML = `
+                <td>${grade}</td>
+                <td>${code}</td>
+                <td>
+                    <button class="btn-preview" id="viewW_${grade}_${code}" disabled>Worksheet</button>
+                    <div class="spinner" id="spin_doc_${code}"></div>
+                </td>
+                <td>
+                    <button class="btn-preview" id="viewA_${grade}_${code}" disabled>Answer Key</button>
+                    <div class="spinner" id="spin_ans_${code}"></div>
+                </td>
+                <td class="generated-time"></td>
+                <td class="menu-cell package menu-cell-padding">
+                    <button class="btn-package" disabled id="pkg_${grade}_${code}" onclick="handlePackageButtonClick('${code}', '${grade}', false, currentUser.username)">Generate</button>
+                    <div class="spinner" id="spin_pkg_${code}"></div>
+                </td>`;
+            // Ensure tbody is inside a .table-scroll-container
+            const parent = tbody.parentElement;
+            if (parent && !parent.classList.contains('table-scroll-container')) {
+                // (Shouldn't happen with showMainPlaceholder, but if so, wrap)
+                const wrapper = document.createElement('div');
+                wrapper.className = 'table-scroll-container';
+                parent.replaceWith(wrapper);
+                wrapper.appendChild(parent);
+            }
+            tbody.appendChild(row);
+            
+            // Initialize button state from master sheet or default
+            const buttonKey = `${grade}_${code}`;
+            packageButtonStates[buttonKey] = workflowStatus || 'generate';
+            updatePackageButtonState(buttonKey, workflowStatus || 'generate');
+        }
+
+        /**
+         * Populates a row once docs are created.
+         */
+        function updateTableRow(code, grade, urls) {
+            const btn = document.getElementById(`pkg_${grade}_${code}`);
+            if (btn) btn.disabled = false;
+            // Enable worksheet preview button
+            const wBtn = document.getElementById(`viewW_${grade}_${code}`);
+            if (wBtn) {
+                wBtn.disabled = false;
+                wBtn.onclick = () => window.open(urls.worksheetUrl, '_blank');
+            }
+            // Enable answer key preview button
+            const aBtn = document.getElementById(`viewA_${grade}_${code}`);
+            if (aBtn) {
+                aBtn.disabled = false;
+                aBtn.onclick = () => window.open(urls.answerKeyUrl, '_blank');
+            }
+            // Cache URLs for context menu actions
+            const buttonKey = `${grade}_${code}`;
+            lessonUrls[buttonKey] = urls;
+            // Attach worksheetType and userEmail for delete lookup
+            lessonUrls[buttonKey].worksheetType = urls.worksheetType || document.getElementById('bulkWorksheetType')?.value;
+            lessonUrls[buttonKey].userEmail         = urls.userEmail         || currentUser.email;
+            
+            // Display (and initialize) relative generated time
+            // Use getElementById first to avoid CSS selector issues when code contains dots or special chars
+            const rowEl = document.getElementById(`row_${grade}_${code}`);
+            const genCell = rowEl ? rowEl.querySelector('.generated-time') : null;
+
+            // Fire event for bundle panel to update instantly after row update
+            window.dispatchEvent(new CustomEvent('lesson-status-updated', {
+                detail: {
+                    subject: document.getElementById('bulkSubject')?.value,
+                    grade,
+                    code,
+                    worksheetType: lessonUrls[buttonKey].worksheetType,
+                    newStatus: 'completed'  // Generated lessons are marked as completed
+                }
+            }));
+            if (genCell) {
+                const then = urls.generatedTime ? new Date(urls.generatedTime) : new Date();
+                genCell.title = then.toLocaleString();
+                const diff = Math.floor((new Date() - then) / 1000);
+                let rel;
+                if (diff < 60)       rel = `${diff}s ago`;
+                else if (diff < 3600) rel = `${Math.floor(diff/60)}m ago`;
+                else if (diff < 86400)rel = `${Math.floor(diff/3600)}h ago`;
+                else                  rel = `${Math.floor(diff/86400)}d ago`;
+                genCell.textContent = rel;
+            }
+        }
+
+        /**
+         * Handles the simplified two-stage package button click system
+         * Stage 1: Generate -> CHECK
+         * Stage 2: CHECK -> DONE (opens Instructions folder directly)
+         * Now integrated with master sheet for state persistence
+         */
+        function handlePackageButtonClick(code, grade, overwrite = false, userName) {
+            if (!userName || userName.trim() === '') {
+                userName = document.getElementById('profileUsername').textContent.trim();
+            }
+            const buttonKey = `${grade}_${code}`;
+            const currentState = packageButtonStates[buttonKey] || 'generate';
+            const btn = document.getElementById(`pkg_${grade}_${code}`);
+            
+            // Don't add pulsing effect for completed status
+            if (btn && currentState !== 'completed') {
+                // Add popup/pulsing effect while waiting for next state
+                btn.classList.add('btn-pulsing');
+                btn.disabled = true;
+            }
+            
+            // Skip click effects for completed status
+            if (btn && currentState !== 'completed') {
+                // Immediate click highlight effect
+                btn.classList.add('btn-change-effect');
+                btn.addEventListener('animationend', () => {
+                    btn.classList.remove('btn-change-effect');
+                }, { once: true });
+            }
+            switch (currentState) {
+                case 'generate':
+                case 'generated': 
+                    generatePackageForLesson(code, grade, overwrite, userName);
+                    break;
+                    
+                case 'packaged':
+                    // Open original lesson folder and change to DONE (skip edit step)
+                    const originalUrl = lessonUrls[buttonKey]?.packageUrl;
+                    if (originalUrl) {
+                        window.open(originalUrl, '_blank');
+                        updateLessonStatusInSheet(buttonKey, 'done');
+                    }
+                    break;
+                    
+                case 'checked':
+                    // This case should not occur anymore since we skip to 'done'
+                    updateLessonStatusInSheet(buttonKey, 'done');
+                    break;
+                    
+                case 'done':
+                    // Check original lesson folder name before action
+                    const packageUrlDone = lessonUrls[buttonKey]?.packageUrl;
+                    if (packageUrlDone) {
+                        google.script.run
+                            .withSuccessHandler(folderName => {
+                                if (folderName.includes("Listed on TpT - Do Not Delete")) {
+                                    // Mark as COMPLETED
+                                    updateLessonStatusInSheet(buttonKey, 'completed');
+                                } else {
+                                    // Open Instructions folder as before
+                                    const instructionsUrl = lessonUrls[buttonKey]?.instructionsUrl;
+                                    if (instructionsUrl) {
+                                        window.open(instructionsUrl, '_blank');
+                                    }
+                                    updateLessonStatusInSheet(buttonKey, 'done');
+                                }
+                            })
+                            .withFailureHandler(err => {
+                                console.error('Error fetching folder name:', err);
+                                alert('Error fetching folder name: ' + err.message);
+                            })
+                            .getFolderNameByUrl(packageUrlDone);
+                    }
+                    break;
+                    
+                case 'completed':
+                    // Do nothing for completed status - button is disabled
+                    return;
+            }
+        }
+
+        /**
+         * Updates lesson status in the master sheet using composite key (grade, lessonCode, worksheetType, userEmail, uploaderUserName)
+         */
+        function updateLessonStatusInSheet(lessonKey, newStatus) {
+            // Parse lessonKey => "Grade_LessonCode"
+            const [grade, lessonCode] = lessonKey.split('_');
+            // Determine worksheet type – first try cached map, then fall back to current selector
+            let worksheetType = (lessonUrls[lessonKey] && lessonUrls[lessonKey].worksheetType)
+                ? lessonUrls[lessonKey].worksheetType
+                : (document.getElementById('bulkWorksheetType')?.value || 'Reading Comprehension');
+            // Normalise whitespace
+            worksheetType = worksheetType.trim();
+            // Collect user info
+            const uploaderUserName = document.getElementById('profileUsername').textContent.trim();
+            const userEmail        = currentUser.email || '';
+
+            google.script.run
+                .withSuccessHandler(() => {
+                    // Update local UI state exactly as before
+                    packageButtonStates[lessonKey] = newStatus;
+                    updatePackageButtonState(lessonKey, newStatus);
+                    // Bundle panel no longer uses tick logic when lesson status changes
+
+                    // Fire event for bundle panel to update instantly
+                    window.dispatchEvent(new CustomEvent('lesson-status-updated', {
+                        detail: {
+                            subject: document.getElementById('subject')?.value,
+                            grade,
+                            code: lessonCode,
+                            worksheetType,
+                            newStatus
+                        }
+                    }));
+                })
+                .withFailureHandler(err => {
+                    console.error('Failed to update lesson status:', err);
+                    alert('Failed to update lesson status: ' + err.message);
+                })
+                // New composite‑key status updater
+                .updateLessonStatusExact(
+                    grade,
+                    lessonCode,
+                    worksheetType,
+                    userEmail,
+                    newStatus,
+                    uploaderUserName
+                );
+        }
+
+        /**
+         * Updates the package button state and appearance
+         */
+        function updatePackageButtonState(buttonKey, newState) {
+            packageButtonStates[buttonKey] = newState;
+            const btn = document.getElementById(`pkg_${buttonKey.replace('_', '_')}`);
+            if (btn) {
+                // Remove pulsing effect upon state update
+                btn.classList.remove('btn-pulsing');
+                btn.disabled = false;
+                // Remove all state classes
+                btn.classList.remove('btn-package', 'btn-check', 'btn-done');
+                switch (newState) {
+                    case 'generate':
+                    case 'generated':
+                        btn.classList.add('btn-package');
+                        btn.textContent = 'Generate';
+                        break;
+                    case 'packaged':
+                        btn.classList.add('btn-check');
+                        btn.textContent = 'CHECK';
+                        break;
+                    case 'checked':
+                        // Directly show DONE for checked state (skip add-thumbnail)
+                        btn.classList.add('btn-done');
+                        btn.textContent = 'DONE';
+                        break;
+                    case 'done':
+                        btn.classList.add('btn-done');
+                        btn.textContent = 'DONE';
+                        break;
+                    case 'completed':
+                        btn.classList.add('btn-done');
+                        btn.textContent = 'COMPLETED';
+                        btn.disabled = true; // Make completed button non-clickable
+                        break;
+                }
+            }
+            // Apply a brief highlight effect when the button changes state
+            if (btn) {
+              btn.classList.add('btn-change-effect');
+              btn.addEventListener('animationend', () => {
+                btn.classList.remove('btn-change-effect');
+              }, { once: true });
+            }
+            // Refresh total earnings when marking CHECK, DONE, or COMPLETED
+            if (newState === 'packaged' || newState === 'done' || newState === 'completed') {
+              loadTotalEarnings();
+            }
+        }
+
+        /**
+         * Fires package generation for a single lesson.
+         * @param {string} code
+         * @param {string} grade
+         * @param {boolean} overwrite
+         */
+    function generatePackageForLesson(code, grade, overwrite = false, userName) {
+            // Use passed grade if available, else fallback to bulkGrade/manual
+            let g = grade;
+            if (!g) {
+                let gradeInput = document.getElementById('bulkGrade');
+                if (!gradeInput) gradeInput = document.getElementById('grade');
+                g = gradeInput ? gradeInput.value : '';
+            }
+            // Determine which server function to call based on worksheet type
+            const worksheetType = document.getElementById('bulkWorksheetType')?.value;
+            const standard = document.getElementById('bulkStandard')?.value || document.getElementById('standard')?.value;
+                                        const serverFn = (worksheetType === 'True Or False with Passage')
+                                ? 'generateTrueFalsePackageForLesson'
+                                : (worksheetType === 'Test Paper')
+                                    ? 'generateTestPaperPackageForLesson'
+                                    : 'generatePackageForLesson';
+            const btn = document.getElementById(`pkg_${g}_${code}`);
+            const spin = document.getElementById('spin_pkg_' + code);
+            // Animate the button
+            if (btn) {
+                btn.classList.add('btn-pulsing');
+                btn.disabled = true;
+            }
+            if (spin) spin.style.display = 'block';
+            const originalText = btn ? btn.textContent : '';
+            
+            google.script.run
+                .withSuccessHandler(({ packageUrl, instructionsUrl }) => {
+                    if (spin) spin.style.display = 'none';
+                    if (btn) {
+                        btn.classList.remove("btn-pulsing");
+                        btn.disabled = false;
+                    }
+                    
+                    // Store the package URL and instructions URL and update button state to CHECK
+                    const buttonKey = `${g}_${code}`;
+                    if (!lessonUrls[buttonKey]) {
+                        lessonUrls[buttonKey] = {};
+                    }
+                    lessonUrls[buttonKey].packageUrl = packageUrl;
+                    lessonUrls[buttonKey].instructionsUrl = instructionsUrl;
+                    
+                    // Update state to 'packaged' (which shows as CHECK button)
+                    updatePackageButtonState(buttonKey, 'packaged');
+                    
+                    // Refresh total earnings after successful package generation
+                    loadTotalEarnings();
+
+                    // Fire event for bundle panel to update instantly
+                    window.dispatchEvent(new CustomEvent('lesson-status-updated', {
+                        detail: {
+                            subject: document.getElementById('subject')?.value || document.getElementById('bulkSubject')?.value,
+                            grade: g,
+                            code,
+                            worksheetType: document.getElementById('bulkWorksheetType')?.value,
+                            newStatus: 'packaged'
+                        }
+                    }));
+                })
+                .withFailureHandler(err => {
+                    if (spin) spin.style.display = 'none';
+                    if (btn) {
+                        btn.classList.remove('btn-pulsing');
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }
+                    const msg = err.message || '';
+                    // If backend asks overwrite confirmation, show modal
+                    if (msg.includes('Overwrite?')) {
+                        showReplaceModal(msg).then(choice => {
+                            if (choice === 'replace') {
+                                // Retry with overwrite flag - pass worksheetType for the retry
+                                generatePackageForLesson(code, grade, true, userName);
+                            }
+                            // If 'skip', do nothing
+                        });
+                    } else {
+                        alert('Error packaging ' + code + ': ' + msg);
+                    }
+                })
+                // Call the appropriate server function
+                [serverFn](
+                    g,
+                    code,
+                    ...(serverFn === 'generatePackageForLesson' ? [worksheetType] : []),
+                    overwrite,
+                    userName,
+                    standard
+                );
+        }
+
+        /**
+         * Loops through all codes for selected grade, creates docs, and updates UI live, processing in domain batches and prompting between batches.
+         */
+        function bulkGenerateDocs() {
+            bulkCancelled = false;
+            stopBulkBtn.disabled = false;
+            stopBulkBtn.style.display = 'inline-flex';
+            document.getElementById('btnBulkDocs').disabled = true;
+            const grade = document.getElementById('bulkGrade').value;
+            if (!grade) return alert('Select a grade first.');
+            const worksheetType = document.getElementById('bulkWorksheetType').value;
+            if (!worksheetType) {
+                alert('Select worksheet type.');
+                spinnerBulk.style.display = 'none';
+                document.getElementById('btnBulkDocs').disabled = false;
+                return;
+            }
+            // If a specific lesson is chosen, only generate that one
+            const singleCode = bulkLesson.value;
+            spinnerBulk.style.display = 'block';
+            // Get tbody from the existing table
+            const tbody = document.getElementById('bulkTableBody');
+            
+                        const subject = document.getElementById('bulkSubject').value;
+                        const standard = document.getElementById('bulkStandard').value;
+                        const domainName = bulkDomain.value;            // may be ""
+
+                        // If domain is selected → existing call (no change)
+                        // First load the codes for the requested scope, then fetch the code->domain map
+                        const onCodesLoaded = (codes) => {
+                            const codesArr = singleCode ? [singleCode] : codes;
+                            // Fetch mapping from lesson code => domain so we can render per-domain tables
+                            google.script.run
+                                .withSuccessHandler(domainMap => {
+                                    try {
+                                        processBatch(codesArr, domainMap || {});
+                                    } catch (e) {
+                                        spinnerBulk.style.display = 'none';
+                                        document.getElementById('btnBulkDocs').disabled = false;
+                                        alert('Failed to start batch: ' + (e && e.message));
+                                    }
+                                })
+                                .withFailureHandler(err => {
+                                    // If domain mapping fails, continue with empty map (all will be Ungrouped)
+                                    processBatch(codesArr, {});
+                                })
+                                .getLessonDomainMap(subject, standard, grade);
+                        };
+
+                        if (domainName) {
+                            google.script.run
+                                .withSuccessHandler(codesForDomain => onCodesLoaded(codesForDomain || []))
+                                .withFailureHandler(err => {
+                                    spinnerBulk.style.display = 'none';
+                                    document.getElementById('btnBulkDocs').disabled = false;
+                                    alert('Error loading lesson codes: ' + err.message);
+                                })
+                                .getCodesForSubjectStandardGradeDomain(subject, standard, grade, domainName);
+                        } else {
+                            google.script.run
+                                .withSuccessHandler(codesAll => onCodesLoaded(codesAll || []))
+                                .withFailureHandler(err => {
+                                    spinnerBulk.style.display = 'none';
+                                    document.getElementById('btnBulkDocs').disabled = false;
+                                    alert('Error loading lesson codes: ' + err.message);
+                                })
+                                .getCodesForSubjectStandardGrade(subject, standard, grade);
+                        }
+
+            // Finish helper
+            function finish() {
+                spinnerBulk.style.display = 'none';
+                stopBulkBtn.disabled = true;
+                stopBulkBtn.style.display = 'none';
+                document.getElementById('btnBulkDocs').disabled = false;
+            }
+
+            // Process batch of codes
+            // Now processBatch receives an optional domainMap: { code: domainName }
+            function processBatch(codes, domainMap) {
+                let i = 0;
+                const codesArr = codes;
+
+                function nextInBatch() {
+                    if (bulkCancelled) {
+                        finish();
+                        return;
+                    }
+                    if (i >= codesArr.length) {
+                        finish();
+                        return;
+                    }
+                    const code = codesArr[i++];
+                    // Determine domain for this code and ensure a domain card/table exists
+                    const domainForCode = (domainMap && domainMap[code]) || domainName || 'Ungrouped';
+                    const tbodyIdForDomain = 'tbody_' + slugDomain(domainForCode);
+                    let domainTbody = document.getElementById(tbodyIdForDomain);
+                    if (!domainTbody) {
+                        // createDomainCard returns the tbody element for the domain
+                        domainTbody = createDomainCard(domainForCode, []);
+                    }
+
+                    // If this lesson is already in the table, ask whether to regenerate
+                    const existingLesson = lessonUrls[`${grade}_${code}`];
+                    if (existingLesson && existingLesson.worksheetType === worksheetType) {
+                        showReplaceModal(`Lesson ${code} of type ${worksheetType} is already generated. Replace it or skip?`).then(choice => {
+                            if (choice === 'replace') {
+                                // Delete existing resources before regenerating
+                                                                const deleteFn = worksheetType === 'True Or False with Passage' 
+                                                                        ? 'deleteTrueFalseLessonResourcesWrapper' 
+                                                                        : (worksheetType === 'Test Paper')
+                                                                            ? 'deleteTestPaperLessonResourcesWrapper'
+                                                                            : 'deleteLessonResources';
+                                // Use subject value for TF, keep RC unchanged
+                                const subj = document.getElementById('bulkSubject')?.value;
+                                if (deleteFn === 'deleteTrueFalseLessonResourcesWrapper') {
+                                    google.script.run[deleteFn](grade, code, subj);
+                                } else {
+                                    google.script.run[deleteFn](code);
+                                }
+                                generateWorksheetForCode(code, grade, worksheetType, domainTbody, true);
+                            } else {
+                                // Skip this code and continue with the next in batch
+                                nextInBatch();
+                            }
+                        });
+                        return;
+                    }
+                    generateWorksheetForCode(code, grade, worksheetType, domainTbody, false);
+                }
+
+                function generateWorksheetForCode(code, grade, worksheetType, tbody, overwrite) {
+                    // Always recreate the row to reset blinking state
+                    const existingRow = document.getElementById(`row_${grade}_${code}`);
+                    if (existingRow) {
+                        existingRow.remove();
+                    }
+                    addTableRow(tbody, code, grade, 'generate');
+                    const rowEl = document.getElementById(`row_${grade}_${code}`);
+                    tbody.insertBefore(rowEl, tbody.firstChild);
+                    rowEl.classList.add('blinking');
+                    // Fetch and update
+                    // Choose correct server function based on worksheet type
+                                        const fnName = worksheetType === 'True Or False with Passage'
+                                                ? 'generateTrueFalseDocsForOneLesson'
+                                                : (worksheetType === 'Test Paper')
+                                                    ? 'generateTestPaperDocsForOneLesson'
+                                                    : 'generateDocsForOneLesson';
+                    // Capture selected subject before calling server
+                    const subject = document.getElementById('bulkSubject')?.value;
+                    const standard = document.getElementById('bulkStandard')?.value; // Pass explicit standard
+                    google.script.run
+                        .withSuccessHandler(urls => {
+                            rowEl.classList.remove('blinking');
+                            updateTableRow(code, grade, urls);
+                            loadTotalEarnings();
+
+                            // Fire event for bundle panel to update instantly after generating new lesson
+                            window.dispatchEvent(new CustomEvent('lesson-status-updated', {
+                                detail: {
+                                    subject: document.getElementById('bulkSubject')?.value,
+                                    grade,
+                                    code,
+                                    worksheetType,
+                                    newStatus: 'completed'  // New lessons are marked as completed
+                                }
+                            }));
+                            
+                            nextInBatch();
+                        })
+                        .withFailureHandler(err => {
+                            rowEl.classList.remove('blinking');
+                            const msg = err.message || '';
+                            // If backend asks overwrite confirmation, show modal
+                            if (msg.includes('Overwrite?')) {
+                                showReplaceModal(msg).then(choice => {
+                                    if (choice === 'replace') {
+                                        // Retry with overwrite flag
+                                        generateWorksheetForCode(code, grade, worksheetType, tbody, true);
+                                    } else {
+                                        // Skip and continue with next
+                                        nextInBatch();
+                                    }
+                                });
+                            } else {
+                                rowEl.innerHTML = `<td>${grade}</td><td>${code}</td><td colspan="3" class="error-cell">Error: ${msg}</td>
+                                    <td class="menu-cell"><button class="btn-package" onclick="regenerateLesson('${code}', '${grade}')">Retry</button></td>`;
+                                nextInBatch();
+                            }
+                        })[fnName](grade, code, overwrite, currentUser.username, subject, worksheetType, standard);
+                }
+                nextInBatch();
+            }
+
+            // getCodesForSubjectStandardGradeDomain will call processBatch with the codes
+        }
+
+        function stopBulkGenerate() {
+            bulkCancelled = true;
+            stopBulkBtn.disabled = true;
+            spinnerBulk.style.display = 'none';
+            // Notify server to cancel in-flight operations
+            google.script.run.stopBulkGenerate();
+            alert('Bulk generation stopped.');
+        }
+
+        /**
+         * Loads all previously generated lessons, sorted newest first.
+         * Now enhanced to load from master sheet with workflow states.
+         */
+        function loadPrevious() {
+            // Show placeholder table
+            showMainPlaceholder();
+            bulkTableContainer.classList.add("table-blinking"); // Add blinking class
+            // Require Subject, Standard, and Grade to be selected before loading previous lessons
+            const subjectVal = (document.getElementById('bulkSubject')?.value || '').trim();
+            const standardVal = (document.getElementById('bulkStandard')?.value || '').trim();
+            const gradeVal = (document.getElementById('bulkGrade')?.value || '').trim();
+            if (!subjectVal || !standardVal || !gradeVal) {
+                // Show an instructional placeholder instead of loading previous lessons
+                const container = bulkTableContainer;
+                container.classList.remove('table-blinking');
+                container.innerHTML = `<div class="table-scroll-container"><table id="bulkTable"><thead><tr>
+                    <th>Grade</th>
+                    <th>Lesson</th>
+                    <th>Worksheet</th>
+                    <th>Answer Key</th>
+                    <th>Last Edit</th>
+                    <th>Package</th>
+                </tr></thead><tbody id="bulkTableBody">
+                    <tr><td colspan="6" style="padding:20px; text-align:center; color:#666;">Please select Subject, Standard, and Grade to load previously generated lessons.</td></tr>
+                </tbody></table></div>`;
+                return;
+            }
+
+            // Call server to get previous lesson codes and URLs with state
+            const isTF = document.getElementById("bulkWorksheetType").value === "True Or False with Passage";
+            const fn   = isTF ? "listPreviouslyGeneratedTF" : "listPreviouslyGenerated";
+            google.script.run
+                .withSuccessHandler(previousItems => {
+                    bulkTableContainer.classList.remove("table-blinking"); // Remove blinking class on success
+                    // Only display lessons for the current account
+                    const currentAccount = currentUser.accountName && currentUser.accountName.trim();
+                    let recentItems = previousItems.filter(item => {
+                      return item.accountName && item.accountName.trim() === currentAccount;
+                    });
+
+                    // Filter by the currently selected worksheet type
+                    const selectedType = document.getElementById("bulkWorksheetType").value.trim();
+                    recentItems = recentItems.filter(item =>
+                      item.worksheetType && item.worksheetType.trim() === selectedType
+                    );
+                    // Filter by the currently selected grade
+                    const selectedGrade = document.getElementById("bulkGrade").value;
+
+                    // NEW: Filter by the currently selected subject (backward compatible)
+                    const selectedSubject = document.getElementById("bulkSubject").value;
+                    if (selectedSubject) {
+                      // Only filter by subject if lessons actually have subject data
+                      // This provides backward compatibility with lessons created before subject field
+                      const itemsWithSubject = recentItems.filter(item => item.subject && item.subject.trim());
+                      if (itemsWithSubject.length > 0) {
+                        // If some lessons have subject data, filter by it
+                        recentItems = recentItems.filter(item =>
+                          (item.subject || '').trim() === selectedSubject.trim()
+                        );
+                      }
+                      // If no lessons have subject data, show all lessons (backward compatibility)
+                    }
+
+                    // NEW: Filter by the currently selected standard
+                    const selectedStandard = document.getElementById("bulkStandard").value;
+                    if (selectedStandard) {
+                      recentItems = recentItems.filter(item =>
+                        (item.standard || '').trim() === selectedStandard.trim()
+                      );
+                    }
+
+                    if (selectedGrade) {
+                      recentItems = recentItems.filter(item => String(item.grade) === String(selectedGrade));
+                    }
+                    // Instead of sorting by date, attempt to display items ordered by the LESSON CODES sheet
+                    // and grouped by domain. We'll request the canonical codes + domain map for the current
+                    // subject/standard/grade and fall back to newest-first for codes not found.
+                    const selectedSubjectVal = selectedSubject || '';
+                    const selectedStandardVal = selectedStandard || '';
+                    const selectedGradeVal = selectedGrade;
+
+                    // Request canonical ordering and domain map from server
+                    google.script.run.withSuccessHandler(mapResult => {
+                        const sheetOrder = (mapResult && mapResult.codes) || [];
+                        const domainMap = (mapResult && mapResult.domainMap) || {};
+
+                        // Build an index map for fast ordering lookup; unknown codes get a large index so they sort last
+                        const orderIndex = {};
+                        sheetOrder.forEach((c, i) => { orderIndex[c] = i; });
+                        const UNKNOWN_INDEX = sheetOrder.length + 1000;
+
+                        // Group recentItems by domain (using domainMap), preserve domain order as encountered in sheetOrder
+                        const groups = {}; // domain -> [items]
+                        const domainEncounterOrder = [];
+                        recentItems.forEach(item => {
+                            const code = item.code;
+                            const domain = domainMap[code] || 'Ungrouped';
+                            if (!groups[domain]) {
+                                groups[domain] = [];
+                                domainEncounterOrder.push(domain);
+                            }
+                            groups[domain].push(item);
+                        });
+
+                        // Sort each group by sheet order (fallback to generatedTime desc for unknown index ties)
+                        domainEncounterOrder.forEach(domain => {
+                            groups[domain].sort((a, b) => {
+                                const ia = orderIndex.hasOwnProperty(a.code) ? orderIndex[a.code] : UNKNOWN_INDEX;
+                                const ib = orderIndex.hasOwnProperty(b.code) ? orderIndex[b.code] : UNKNOWN_INDEX;
+                                if (ia !== ib) return ia - ib;
+                                // Fallback: newest first
+                                return new Date(b.generatedTime) - new Date(a.generatedTime);
+                            });
+                        });
+
+                        // Render per-domain mini-tables instead of one long table
+                        try {
+                            renderDomainCards(groups, domainEncounterOrder);
+                        } catch (e) {
+                            console.warn('renderDomainCards failed, falling back to single table', e);
+                        }
+
+                        // If there are any recentItems whose domain was not encountered (shouldn't happen), append them
+                        const handled = new Set();
+                        domainEncounterOrder.forEach(d => groups[d].forEach(it => handled.add(it.code)));
+                        const leftovers = recentItems.filter(it => !handled.has(it.code));
+                        if (leftovers.length) {
+                            // Sort leftovers newest-first then append under 'Ungrouped'
+                            leftovers.sort((a,b)=> new Date(b.generatedTime) - new Date(a.generatedTime));
+                            const hdr = document.createElement('tr');
+                            hdr.className = 'domain-header';
+                            hdr.innerHTML = `<td colspan="6" style="font-weight:600; background:#f4f4f4;">Ungrouped</td>`;
+                            tbody.appendChild(hdr);
+                            leftovers.forEach(item => {
+                                const workflowStatus = item.workflowStatus || 'generated';
+                                addTableRow(tbody, item.code, item.grade, workflowStatus);
+                                updateTableRow(item.code, item.grade, {
+                                    worksheetUrl: item.worksheetUrl,
+                                    answerKeyUrl: item.answerKeyUrl,
+                                    generatedTime: item.generatedTime,
+                                    packageUrl: item.packageUrl,
+                                    instructionsUrl: item.instructionsUrl
+                                });
+                            });
+                        }
+
+                    }).withFailureHandler(err => {
+                        // On failure fetching sheet order/domain, fallback to previous newest-first behavior
+                        console.error('getLessonDomainMap failed', err);
+                        recentItems.sort((a, b) => new Date(b.generatedTime) - new Date(a.generatedTime));
+                        const container = bulkTableContainer;
+                        container.innerHTML = `<table id="bulkTable"><thead><tr>
+                            <th>Grade</th>
+                            <th>Lesson</th>
+                            <th>Worksheet</th>
+                            <th>Answer Key</th>
+                            <th>Last Edit</th>
+                            <th>Package</th>
+                        </tr></thead><tbody id="bulkTableBody"></tbody></table>`;
+                        const tbody = document.getElementById('bulkTableBody');
+                        recentItems.forEach(item => {
+                            const workflowStatus = item.workflowStatus || 'generated';
+                            addTableRow(tbody, item.code, item.grade, workflowStatus);
+                            updateTableRow(item.code, item.grade, {
+                                worksheetUrl: item.worksheetUrl,
+                                answerKeyUrl: item.answerKeyUrl,
+                                generatedTime: item.generatedTime,
+                                packageUrl: item.packageUrl,
+                                instructionsUrl: item.instructionsUrl
+                            });
+                        });
+                    }).getLessonDomainMap(selectedSubjectVal, selectedStandardVal, selectedGradeVal);
+                })
+                .withFailureHandler(err => {
+                    bulkTableContainer.classList.remove("table-blinking"); // Remove blinking class on failure
+                    alert("Error loading previous: " + err.message);
+                })[fn]();
+        }
+
+        /**
+         * Deletes all resources related to a lesson code.
+         */
+        function deleteLesson(code, grade) {
+            if (!confirm(`Delete all items for lesson ${code}?`)) return;
+            
+            const key = `${grade}_${code}`;
+            const { worksheetType, userEmail } = lessonUrls[key] || {};
+            
+            if (!worksheetType || !userEmail) {
+                alert("Unable to find worksheet type or user email for this lesson.");
+                return;
+            }
+            
+            // Start blinking animation on the row
+            const rowEl = document.getElementById(`row_${grade}_${code}`);
+            if (rowEl) rowEl.classList.add('blinking');
+            
+            google.script.run
+                .withSuccessHandler(() => {
+                    // Remove the row from the table
+                    const row = document.getElementById(`row_${grade}_${code}`);
+                    if (row) row.remove();
+                    
+                    // Reset button state
+                    const buttonKey = `${grade}_${code}`;
+                    delete packageButtonStates[buttonKey];
+                    delete lessonUrls[buttonKey];
+                    loadTotalEarnings();
+                })
+                .withFailureHandler(err => {
+                    alert('Failed to delete lesson: ' + err.message);
+                })
+                .deleteLessonAndResources(grade, code, worksheetType, userEmail);
+        }
+
+        // Regenerate functionality removed
+
+    // Context menu logic
+    const contextMenu = document.getElementById('contextMenu');
+    let contextCode = null;
+    // Track currently highlighted row so only one row is highlighted at a time
+    let highlightedRow = null;
+        // Reference to card element for relative positioning
+        const card = document.querySelector('.main-app');
+
+        // Observe when the context menu is hidden so we can clear any lingering blink states
+        try {
+            const observer = new MutationObserver(() => {
+                try {
+                    if (contextMenu.style.display === 'none' || getComputedStyle(contextMenu).display === 'none') {
+                        contextMenu.querySelectorAll('.blinking-ui').forEach(el => el.classList.remove('blinking-ui'));
+                    }
+                } catch (e) { /* ignore */ }
+            });
+            observer.observe(contextMenu, { attributes: true, attributeFilter: ['style', 'class'] });
+        } catch (e) { /* MutationObserver may not be available in some environments; ignore */ }
+
+        // Hide menu when clicking outside it; keep it visible when clicking inside so menu items can show progress
+        document.addEventListener('click', (ev) => {
+            if (!contextMenu.contains(ev.target)) {
+                contextMenu.style.display = 'none';
+                // reset all items to visible when menu is next opened and clear blinking
+                Array.from(contextMenu.children).forEach(item => {
+                    item.style.display = 'block';
+                    try { item.classList.remove('blinking-ui'); } catch (er) {}
+                });
+                try { contextMenu.querySelectorAll('.blinking-ui').forEach(el => el.classList.remove('blinking-ui')); } catch (er) {}
+            }
+        });
+
+        // Show context menu on 3‑dots button click
+        document.addEventListener('click', e => {
+            if (e.target.matches('.menu-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const row = e.target.closest('tr');
+                if (!row || !row.id) {
+                  contextMenu.style.display = 'none';
+                  return;
+                }
+                contextCode = row.id.replace('row_','');
+                
+                // Update lesson ID display in context menu
+                updateLessonIdDisplay(contextCode);
+                
+                const rect = e.target.getBoundingClientRect();
+                const cardRect = card.getBoundingClientRect();
+                // Compute position relative to card
+                const top = rect.bottom - cardRect.top;
+                const left = rect.left - cardRect.left;
+                contextMenu.style.top = top + 'px';
+                contextMenu.style.left = left + 'px';
+                contextMenu.style.display = 'block';
+            } else if (!contextMenu.contains(e.target)) {
+                // click outside the menu hides it
+                contextMenu.style.display = 'none';
+            }
+        });
+
+        // Show custom menu on right-click of a row
+        document.addEventListener('contextmenu', (e) => {
+            const tr = e.target.closest('tr');
+            if (tr && tr.id && tr.id.startsWith('row_')) {
+                e.preventDefault();
+                contextCode = tr.id.replace('row_','');
+                
+                // Update lesson ID display in context menu
+                updateLessonIdDisplay(contextCode);
+                
+                // Highlight the right-clicked row similar to button clicks
+                try {
+                    if (highlightedRow && highlightedRow !== tr) highlightedRow.classList.remove('highlight');
+                    tr.classList.add('highlight');
+                    highlightedRow = tr;
+                } catch (er) { /* ignore if highlight fails */ }
+                const cardRect2 = card.getBoundingClientRect();
+                // Compute relative to card
+                const top2 = e.clientY - cardRect2.top;
+                const left2 = e.clientX - cardRect2.left;
+                contextMenu.style.top = top2 + 'px';
+                contextMenu.style.left = left2 + 'px';
+                contextMenu.style.display = 'block';
+            }
+        });
+
+        // Also open the same context menu on double-click of a row
+        document.addEventListener('dblclick', (e) => {
+            const tr = e.target.closest('tr');
+            if (tr && tr.id && tr.id.startsWith('row_')) {
+                e.preventDefault();
+                contextCode = tr.id.replace('row_','');
+                try {
+                    if (highlightedRow && highlightedRow !== tr) highlightedRow.classList.remove('highlight');
+                    tr.classList.add('highlight');
+                    highlightedRow = tr;
+                } catch (er) { /* ignore */ }
+                const rect = tr.getBoundingClientRect();
+                const cardRect = card.getBoundingClientRect();
+                // Position menu near the row center-left
+                const top = (rect.top + rect.height / 2) - cardRect.top;
+                const left = (rect.left) - cardRect.left + 8;
+                contextMenu.style.top = top + 'px';
+                contextMenu.style.left = left + 'px';
+                contextMenu.style.display = 'block';
+            }
+        });
+
+        // Helper to temporarily change a menu item's label (and restore)
+        function setMenuItemTemporaryState(btn, tempText, timeout = 1600) {
+            if (!btn) return;
+            const orig = btn.innerHTML;
+            btn.dataset._orig = orig;
+            btn.innerHTML = tempText;
+            btn.disabled = true;
+            setTimeout(() => {
+                try { btn.innerHTML = btn.dataset._orig || orig; btn.disabled = false; delete btn.dataset._orig; } catch (e) {}
+            }, timeout);
+        }
+
+        // Handle menu item clicks
+        contextMenu.addEventListener('click', (e) => {
+            // Prevent global click handlers from immediately hiding the menu while an action runs
+            e.stopPropagation();
+            // Add blinking state to the clicked menu item immediately (visual feedback)
+            try {
+                if (e.target && e.target.dataset && e.target.dataset.action) {
+                    e.target.classList.add('blinking-ui');
+                    // Force reflow so animation starts immediately in some browsers
+                    // eslint-disable-next-line no-unused-expressions
+                    void e.target.offsetWidth;
+                }
+            } catch (er) {}
+            const action = e.target.dataset.action;
+            if (action && contextCode) {
+                let code = contextCode;
+                let grade = undefined;
+                if (contextCode.includes('_')) {
+                    const idx = contextCode.indexOf('_');
+                    grade = contextCode.substring(0, idx);
+                    code = contextCode.substring(idx + 1);
+                }
+                const urls = lessonUrls[`${grade}_${code}`] || lessonUrls[contextCode] || {};
+                switch (action) {
+                    case 'copyTitle': {
+                        // Call server to generate title from prompt id (do not save to sheet)
+                        const key = `${grade}_${code}`;
+                        const urls = lessonUrls[key] || {};
+                        const subject = urls.subject || document.getElementById('bulkSubject')?.value || '';
+                        const standard = document.getElementById('bulkStandard')?.value || '';
+                        const worksheetType = urls.worksheetType || document.getElementById('bulkWorksheetType')?.value || '';
+                        const btn = e.target;
+                        try { btn.classList.add('blinking-ui'); } catch (er) {}
+                        // If we have a worksheet URL for this lesson, ask server for document parts (name, passage title, name line)
+                        const keyForUrls = `${grade}_${code}`;
+                        const urlsForKey = lessonUrls[keyForUrls] || {};
+                        const worksheetUrlForKey = urlsForKey.worksheetUrl || urlsForKey.packageUrl || '';
+                        if (worksheetUrlForKey) {
+                            google.script.run
+                                .withSuccessHandler(parts => {
+                                    try { btn.classList.remove('blinking-ui'); } catch (er) {}
+                                    if (!parts) {
+                                        showMessage('No document information available.', 'error');
+                                        setTimeout(() => { contextMenu.style.display = 'none'; }, 300);
+                                        return;
+                                    }
+                                    // Prefer to copy only the visible passage title.
+                                    // Fallback to fileName or nameLine if passageTitle not available.
+                                    let textToCopy = (parts.passageTitle || '').trim();
+                                    if (!textToCopy) {
+                                        if (parts.fileName) textToCopy = String(parts.fileName || '').trim();
+                                        else if (parts.nameLine) textToCopy = String(parts.nameLine || '').trim();
+                                    }
+                                    const onCopied = () => { setMenuItemTemporaryState(btn, 'Copied!'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); };
+                                    const onCopyFail = () => { showMessage('Failed to copy title to clipboard.', 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); };
+                                    if (!textToCopy) {
+                                        showMessage('No title found in document to copy.', 'error');
+                                        setTimeout(() => { contextMenu.style.display = 'none'; }, 300);
+                                        return;
+                                    }
+                                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                                        navigator.clipboard.writeText(textToCopy).then(onCopied).catch(onCopyFail);
+                                    } else {
+                                        const ta = document.createElement('textarea'); ta.value = textToCopy; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); onCopied(); } catch (e) { onCopyFail(); } ta.remove();
+                                    }
+                                })
+                                .withFailureHandler(err => { try { btn.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to fetch document info: ' + (err && err.message), 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 600); })
+                                .getWorksheetTitleParts(worksheetUrlForKey);
+                        } else {
+                            // Fallback to original title generation from prompt
+                            google.script.run
+                                .withSuccessHandler(title => {
+                                    try { btn.classList.remove('blinking-ui'); } catch (er) {}
+                                    if (!title) {
+                                        showMessage('No title generated.', 'error');
+                                        setTimeout(() => { contextMenu.style.display = 'none'; }, 300);
+                                        return;
+                                    }
+                                    const onCopied = () => { setMenuItemTemporaryState(btn, 'Copied!'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); };
+                                    const onCopyFail = () => { showMessage('Failed to copy title to clipboard.', 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); };
+                                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                                        navigator.clipboard.writeText(title).then(onCopied).catch(onCopyFail);
+                                    } else {
+                                        const ta = document.createElement('textarea'); ta.value = title; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); onCopied(); } catch (e) { onCopyFail(); } ta.remove();
+                                    }
+                                })
+                                .withFailureHandler(err => { try { btn.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to generate title: ' + (err && err.message), 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 600); })
+                                .generateTitleFromPrompt(subject, standard, grade, code, worksheetType);
+                        }
+                        break;
+                    }
+                    case 'copyTptTitle': {
+                        // Copy the TPT title saved in master sheet Column V (22)
+                        // Build the full lessonKey the server expects (same format used when saving to Column A)
+                        const btnT = e.target;
+                        try { btnT.classList.add('blinking-ui'); } catch (er) {}
+
+                        // derive worksheetType and accountName from cached urls or UI
+                        const urlsForKey = lessonUrls[`${grade}_${code}`] || lessonUrls[contextCode] || {};
+                        const worksheetTypeForKey = urlsForKey.worksheetType || document.getElementById('bulkWorksheetType')?.value || '';
+                        const accountForKey = (currentUser && currentUser.accountName) ? currentUser.accountName : '';
+
+                        // createLessonKey is defined earlier and now produces same key as server helpers
+                        const lessonKey = createLessonKey(accountForKey, grade, code, worksheetTypeForKey);
+
+                        google.script.run
+                            .withSuccessHandler(title => {
+                                try { btnT.classList.remove('blinking-ui'); } catch (er) {}
+                                if (!title || !String(title).trim()) {
+                                    showMessage('No saved TPT title found for this lesson.', 'error');
+                                    setTimeout(() => { contextMenu.style.display = 'none'; }, 400);
+                                    return;
+                                }
+                                const textToCopy = String(title).trim();
+                                const onCopied = () => { setMenuItemTemporaryState(btnT, 'Copied!'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); };
+                                const onCopyFail = () => { showMessage('Failed to copy TPT title to clipboard.', 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); };
+                                if (navigator.clipboard && navigator.clipboard.writeText) {
+                                    navigator.clipboard.writeText(textToCopy).then(onCopied).catch(onCopyFail);
+                                } else {
+                                    const ta = document.createElement('textarea'); ta.value = textToCopy; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); onCopied(); } catch (e) { onCopyFail(); } ta.remove();
+                                }
+                            })
+                            .withFailureHandler(err => { try { btnT.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to fetch TPT title: ' + (err && err.message), 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 600); })
+                            .getTptTitleByLessonKey(lessonKey);
+                        break;
+                    }
+                    case 'copyTptDescription': {
+                        const key = `${grade}_${code}`;
+                        const urlsMap = lessonUrls[key] || {};
+                        const subject = urlsMap.subject || document.getElementById('bulkSubject')?.value || '';
+                        const standard = document.getElementById('bulkStandard')?.value || '';
+                        const worksheetType = urlsMap.worksheetType || document.getElementById('bulkWorksheetType')?.value || '';
+                        const worksheetUrl = urlsMap.worksheetUrl || urlsMap.packageUrl || '';
+                        const btn = e.target;
+                        try { btn.classList.add('blinking-ui'); } catch (er) {}
+                        google.script.run
+                            .withSuccessHandler(html => {
+                                try { btn.classList.remove('blinking-ui'); } catch (er) {}
+                                console.log('Description generated successfully:', html);
+                                if (!html || html.trim() === '') {
+                                    showMessage('No description was generated. Please check the console for details.', 'error');
+                                    setTimeout(() => { contextMenu.style.display = 'none'; }, 600);
+                                    return;
+                                }
+                                copyRichTextToClipboard(html, btn);
+                                setTimeout(() => { contextMenu.style.display = 'none'; }, 900);
+                            })
+                            .withFailureHandler(err => {
+                                try { btn.classList.remove('blinking-ui'); } catch (er) {}
+                                console.error('Failed to generate description:', err);
+                                showMessage('Failed to generate description: ' + (err && err.message || err), 'error');
+                                setTimeout(() => { contextMenu.style.display = 'none'; }, 600);
+                            })
+                            .generateDescriptionFromPrompt(subject, standard, grade, code, worksheetType, worksheetUrl);
+                        break;
+                    }
+                    case 'downloadWorksheet': {
+                        const key = `${grade}_${code}`;
+                        const urls = lessonUrls[key] || {};
+                        const docUrl = urls.worksheetUrl || urls.packageUrl || '';
+                        if (!docUrl) return showMessage('Worksheet URL not available for this lesson.', 'error');
+                        const btn = e.target;
+                        try { btn.classList.add('blinking-ui'); } catch (er) {}
+                        google.script.run
+                            .withSuccessHandler(({name, data}) => {
+                                try { btn.classList.remove('blinking-ui'); } catch (er) {}
+                                // create blob link from base64 and trigger download
+                                const binary = atob(data);
+                                const len = binary.length;
+                                const bytes = new Uint8Array(len);
+                                for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+                                const blob = new Blob([bytes], { type: 'application/pdf' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url; a.download = name || (code + '_worksheet.pdf');
+                                document.body.appendChild(a); a.click(); a.remove();
+                                setTimeout(() => URL.revokeObjectURL(url), 2000);
+                                setMenuItemTemporaryState(btn, 'Downloaded');
+                                setTimeout(() => { contextMenu.style.display = 'none'; }, 900);
+                            })
+                            .withFailureHandler(err => { try { btn.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to download worksheet: ' + err.message, 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); })
+                            .getWorksheetPdfBase64(docUrl);
+                        break;
+                    }
+                    case 'downloadPreview': {
+                        const key = `${grade}_${code}`;
+                        const urls = lessonUrls[key] || {};
+                        const instrUrl = urls.instructionsUrl || '';
+                        if (!instrUrl) return showMessage('Instructions / Preview folder URL not available for this lesson.', 'error');
+                        const btn = e.target;
+                        try { btn.classList.add('blinking-ui'); } catch (er) {}
+                        google.script.run
+                            .withSuccessHandler(({name, data}) => {
+                                try { btn.classList.remove('blinking-ui'); } catch (er) {}
+                                const binary = atob(data);
+                                const len = binary.length;
+                                const bytes = new Uint8Array(len);
+                                for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+                                const blob = new Blob([bytes], { type: 'application/pdf' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url; a.download = name || (code + '_preview.pdf');
+                                document.body.appendChild(a); a.click(); a.remove();
+                                setTimeout(() => URL.revokeObjectURL(url), 2000);
+                                setMenuItemTemporaryState(btn, 'Downloaded');
+                                setTimeout(() => { contextMenu.style.display = 'none'; }, 900);
+                            })
+                            .withFailureHandler(err => { try { btn.classList.remove('blinking-ui'); } catch (er) {} ; showMessage('Failed to download preview: ' + err.message, 'error'); setTimeout(() => { contextMenu.style.display = 'none'; }, 900); })
+                            .getPreviewPdfFromInstructionsFolderBase64(instrUrl);
+                        break;
+                    }
+                    case 'deleteLesson':
+                        deleteLesson(code, grade);
+                        break;
+                    
+                    default:
+                        break;
+                }
+            }
+        });
+
+        // Live update relative "x ago" for generated-time cells
+        setInterval(() => {
+            document.querySelectorAll('.generated-time').forEach(cell => {
+                const ts = cell.title;
+                if (!ts) return;
+                const then = new Date(ts);
+                const now = new Date();
+                const diff = Math.floor((now - then) / 1000);
+                let rel;
+                if (diff < 60) rel = `${diff}s ago`;
+                else if (diff < 3600) rel = `${Math.floor(diff/60)}m ago`;
+                else if (diff < 86400) rel = `${Math.floor(diff/3600)}h ago`;
+                else rel = `${Math.floor(diff/86400)}d ago`;
+                cell.textContent = rel;
+            });
+        }, 1000);
+
+    // Single-row highlight logic
+
+    document.addEventListener('click', (e) => {
+            // If a button inside a lesson row was clicked
+            const btn = e.target.closest('button');
+            const row = btn ? btn.closest('tr') : null;
+            if (btn && row && row.id.startsWith('row_')) {
+                // Remove highlight from previously highlighted row
+                if (highlightedRow && highlightedRow !== row) {
+                    highlightedRow.classList.remove('highlight');
+                }
+                // Toggle highlight on current row
+                row.classList.add('highlight');
+                highlightedRow = row;
+                // Prevent outer click handler from immediately removing it
+                e.stopPropagation();
+                return;
+            }
+            // Click occurred outside any lesson-row button: clear highlightz
+            if (highlightedRow) {
+                highlightedRow.classList.remove('highlight');
+                highlightedRow = null;
+            }
+        });
+
+        // Handle worksheet type changes
+        document.getElementById('bulkWorksheetType')
+            .addEventListener('change', function() {
+                // Save selection to localStorage
+                localStorage.setItem('sel_worksheet_type', this.value);
+                // Reload history with new type
+                loadPrevious();
+            });
+
+        // Add enter key support for better UX
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !loginBtn.disabled && !isLoggedIn) {
+                loginForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Guard variable to prevent concurrent earnings fetches
+        let __earningsFetching = false;
+
+        // Load total earnings from Google Sheet
+        function loadTotalEarnings() {
+            if (!currentUser.username || __earningsFetching) return;
+            __earningsFetching = true;
+            google.script.run
+                .withSuccessHandler(total => {
+                    if (typeof updateEarningsDisplay === 'function') {
+                        updateEarningsDisplay(parseFloat(total || 0));
+                    } else if (earningsAmount) {
+                        earningsAmount.textContent = 'LKR ' + (parseFloat(total || 0)).toFixed(2);
+                    }
+                    __earningsFetching = false;
+                })
+                .withFailureHandler(() => {
+                    if (earningsAmount) earningsAmount.textContent = 'LKR 0.00';
+                    __earningsFetching = false;
+                })
+                .getTotalEarningsForUser(currentUser.username);
+        }
+
+        // Update earnings display with animation
+        function updateEarningsDisplay(newAmount) {
+            if (!earningsAmount) return;
+            
+            const currentText = earningsAmount.textContent;
+            const currentAmount = parseFloat(currentText.replace(/[^0-9.-]+/g, '')) || 0;
+            
+            if (currentAmount === newAmount) return;
+            
+            // Add animation class
+            earningsAmount.parentElement.classList.add('earnings-updating');
+            
+            // Animate the number change
+            const duration = 1500; // 1.5 seconds
+            const startTime = Date.now();
+            const difference = newAmount - currentAmount;
+            
+            function animateValue() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Use easeOutCubic for smooth animation
+                const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+                const currentValue = currentAmount + (difference * easeOutCubic);
+                
+                earningsAmount.textContent = `LKR ${currentValue.toFixed(2)}`;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateValue);
+                } else {
+                    // Animation complete
+                    earningsAmount.textContent = `LKR ${newAmount.toFixed(2)}`;
+                    earningsAmount.parentElement.classList.remove('earnings-updating');
+                    
+                    // Add a brief success flash
+                    earningsAmount.parentElement.classList.add('earnings-updated');
+                    setTimeout(() => {
+                        earningsAmount.parentElement.classList.remove('earnings-updated');
+                    }, 1000);
+                }
+            }
+            
+            animateValue();
+        }
+    </script>
+
+    <!-- bundle panel scripts removed — functionality moved to domain header handlers -->
+
+
+
+</body>
+</html>
