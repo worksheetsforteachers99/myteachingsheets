@@ -95,7 +95,7 @@
             
             <div id="messageContainer" class="message"></div>
             
-            <form id="loginForm">
+            <form id="loginForm" method="post" action="#">
                 <div class="form-group">
                     <label for="username">Username</label>
                     <input type="text" id="username" name="username" required autocomplete="username">
@@ -226,6 +226,38 @@
             const json = await resp.json();
             if (!json || json.ok === false) throw new Error(json && json.error ? json.error : 'Request failed');
             return json.data;
+        }
+
+        // --- tiny DOM helpers to safely attach listeners and avoid null errors ---
+        const $ = (id) => document.getElementById(id);
+        const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
+
+        // Safe login handler using the api() helper
+        async function handleLogin(e) {
+            e.preventDefault();
+            hideMessage?.();
+            setLoading?.(true, 'Checking credentials...');
+            try {
+                const form = e.currentTarget || $('loginForm');
+                const fd = new FormData(form);
+                const username = (fd.get('username') || '').trim();
+                const password = (fd.get('password') || '').trim();
+
+                const res = await api('loginUser', { username, password });
+                if (res && res.success) {
+                    updateUserProfile?.(res.user || { username });
+                    showMainApp?.();
+                    const loginContainer = $('loginContainer'); if (loginContainer) loginContainer.style.display = 'none';
+                    const appHeader = $('appHeader'); if (appHeader) appHeader.style.display = 'flex';
+                } else {
+                    showMessage?.(res?.message || 'Invalid username or password', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showMessage?.('An error occurred. Please try again.', 'error');
+            } finally {
+                setLoading?.(false);
+            }
         }
 
         // Global variables
@@ -1213,25 +1245,15 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
     }
 };
         
-        // Profile dropdown functionality
-        profileButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            profileDropdown.classList.toggle('show');
-        });
-        
-        // Close dropdown when clicking outside
+        // Profile dropdown functionality (safe attachments)
+        on('profileButton', 'click', (e) => { e.stopPropagation(); const pd = $('profileDropdown'); if (pd) pd.classList.toggle('show'); });
+        // Close dropdown when clicking outside (guard elements)
         document.addEventListener('click', (e) => {
-            if (!profileDropdown.contains(e.target) && !profileButton.contains(e.target)) {
-                profileDropdown.classList.remove('show');
-            }
+            const pd = $('profileDropdown'); const pb = $('profileButton');
+            if (pd && pb && !pd.contains(e.target) && !pb.contains(e.target)) pd.classList.remove('show');
         });
-        
-        // Logout functionality
-        logoutButton.addEventListener('click', () => {
-            if (confirm('Are you sure you want to logout?')) {
-                logout();
-            }
-        });
+        // Logout functionality (already attached via on() above but keep local confirmation flow)
+        on('logoutButton', 'click', () => { if (confirm('Are you sure you want to logout?')) logout(); });
 
         // Payout Method modal controls
         const payoutModal = document.getElementById('payoutModal');
@@ -1252,60 +1274,53 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             payoutForm.classList.remove('hidden');
         }
 
-        payoutMethodButton.addEventListener('click', async () => {
-            // Load existing payout details via API
+        on('payoutMethodButton', 'click', async () => {
             try {
                 const details = await api('getPayoutDetails', { username: currentUser.username });
                 if (details && (details.bank || details.branch || details.accountNumber || details.accountName)) {
-                    document.getElementById('viewBank').textContent = details.bank || '-';
-                    document.getElementById('viewBranch').textContent = details.branch || '-';
-                    document.getElementById('viewAccountNumber').textContent = details.accountNumber || '-';
-                    document.getElementById('viewAccountName').textContent = details.accountName || '-';
+                    const vb = $('viewBank'); if (vb) vb.textContent = details.bank || '-';
+                    const br = $('viewBranch'); if (br) br.textContent = details.branch || '-';
+                    const an = $('viewAccountNumber'); if (an) an.textContent = details.accountNumber || '-';
+                    const na = $('viewAccountName'); if (na) na.textContent = details.accountName || '-';
                     showPayoutView();
                 } else {
-                    payoutForm.reset();
+                    const pf = $('payoutForm'); if (pf) pf.reset();
                     showPayoutForm();
                 }
-                payoutModal.style.display = 'flex';
-                profileDropdown.classList.remove('show'); // Close dropdown
+                const pm = $('payoutModal'); if (pm) pm.style.display = 'flex';
+                const pd = $('profileDropdown'); if (pd) pd.classList.remove('show');
             } catch (err) {
                 showMessage('Failed to load payout details: ' + (err && err.message ? err.message : err), 'error');
             }
         });
 
-        payoutEditBtn.addEventListener('click', () => {
-            // Populate form with current values and switch to edit mode
-            document.getElementById('bank').value = document.getElementById('viewBank').textContent !== '-' ? document.getElementById('viewBank').textContent : '';
+        on('payoutEditBtn', 'click', () => {
+            const vb = $('viewBank'); const vbn = $('bank'); if (vbn) vbn.value = (vb && vb.textContent !== '-') ? vb.textContent : '';
             document.getElementById('branch').value = document.getElementById('viewBranch').textContent !== '-' ? document.getElementById('viewBranch').textContent : '';
             document.getElementById('accountNumber').value = document.getElementById('viewAccountNumber').textContent !== '-' ? document.getElementById('viewAccountNumber').textContent : '';
             document.getElementById('accountName').value = document.getElementById('viewAccountName').textContent !== '-' ? document.getElementById('viewAccountName').textContent : '';
             showPayoutForm();
         });
 
-        payoutCancelBtn.addEventListener('click', () => {
-            payoutModal.style.display = 'none';
-        });
+        on('payoutCancelBtn', 'click', () => { const pm = $('payoutModal'); if (pm) pm.style.display = 'none'; });
+        on('payoutCancelEditBtn', 'click', () => { showPayoutView(); });
 
-        payoutCancelEditBtn.addEventListener('click', () => {
-            // Go back to view mode without saving
-            showPayoutView();
-        });
-
-    payoutForm.addEventListener('submit', async (e) => {
+        on('payoutForm', 'submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(payoutForm);
-            const bank = formData.get('bank').trim();
-            const branch = formData.get('branch').trim();
-            const accountNumber = formData.get('accountNumber').trim();
-            const accountName = formData.get('accountName').trim();
+            const pf = $('payoutForm'); if (!pf) return;
+            const formData = new FormData(pf);
+            const bank = (formData.get('bank') || '').trim();
+            const branch = (formData.get('branch') || '').trim();
+            const accountNumber = (formData.get('accountNumber') || '').trim();
+            const accountName = (formData.get('accountName') || '').trim();
 
             try {
                 const success = await api('updatePayoutDetails', { username: currentUser.username, bank, branch, accountNumber, accountName });
                 if (success) {
                     showMessage('Payout details saved successfully!', 'success');
-                    document.getElementById('viewBank').textContent = bank || '-';
-                    document.getElementById('viewBranch').textContent = branch || '-';
-                    document.getElementById('viewAccountNumber').textContent = accountNumber || '-';
+                    const vb = $('viewBank'); if (vb) vb.textContent = bank || '-';
+                    const br = $('viewBranch'); if (br) br.textContent = branch || '-';
+                    const an = $('viewAccountNumber'); if (an) an.textContent = accountNumber || '-';
                     document.getElementById('viewAccountName').textContent = accountName || '-';
                     showPayoutView();
                     setTimeout(() => { payoutModal.style.display = 'none'; }, 1500);
@@ -1574,29 +1589,9 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             hideMessage();
         }
         
-        loginForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            hideMessage();
-            
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-            
-            if (!username || !password) {
-                showMessage('Please enter both username and password.');
-                return;
-            }
-            
-            setLoading(true, 'Verifying credentials...');
-            
-            try {
-                // Call backend via proxy to authenticate
-                const result = await api('authenticateUser', { username, password });
-                handleLoginSuccess(result);
-            } catch (error) {
-                setLoading(false);
-                handleLoginError(error);
-            }
-        });
+        // attach safe handlers
+        on('loginForm', 'submit', handleLogin);
+        on('logoutButton', 'click', () => { localStorage.removeItem('appscript_user_session'); location.reload(); });
         
         async function handleLoginSuccess(result) {
             if (result.success) {
