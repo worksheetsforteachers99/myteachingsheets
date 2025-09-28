@@ -2935,14 +2935,15 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             }
         });
 
-        // Handle worksheet type changes
-        document.getElementById('bulkWorksheetType')
-            .addEventListener('change', function() {
-                // Save selection to localStorage
-                localStorage.setItem('sel_worksheet_type', this.value);
-                // Reload history with new type
-                loadPrevious();
-            });
+        // Handle worksheet type changes (guarded)
+        on('bulkWorksheetType', 'change', function() {
+            const val = (this && this.value) || document.getElementById('bulkWorksheetType')?.value;
+            if (!val) return;
+            // Save selection to localStorage
+            localStorage.setItem('sel_worksheet_type', val);
+            // Reload history with new type
+            if (typeof loadPrevious === 'function') loadPrevious();
+        });
 
         // Add enter key support for better UX
         document.addEventListener('keydown', function(e) {
