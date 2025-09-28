@@ -649,9 +649,22 @@ async function populateSubjects() {
         setSelectsDisabledExcept([], true);
         domainDropdown.disabled = true;
         try {
-            console.debug('[debug] load domains for', { subject, standard, grade });
-            const domains = await api('getDomainsForSubjectStandardGrade', { subject, standard, grade });
-            console.debug('[debug] domains result', domains);
+            console.debug('Requesting domains for', { subject, standard, grade });
+            let domains = await api('getDomainsForSubjectStandardGrade', { subject, standard, grade });
+            console.debug('Received domains:', domains);
+            // If server returned empty domains (sheet layout edge-case), derive domains from lessonDomainMap
+            if ((!domains || domains.length === 0) && typeof api === 'function') {
+                try {
+                    const map = await api('getLessonDomainMap', { subject, standard, grade });
+                    console.debug('Received lessonDomainMap fallback:', map);
+                    // map.domainMap is an object { code: domain }
+                    const uniq = new Set();
+                    Object.keys(map.domainMap || {}).forEach(c => { const d = map.domainMap[c]; if (d) uniq.add(d); });
+                    domains = Array.from(uniq);
+                } catch (fallbackErr) {
+                    console.debug('Fallback getLessonDomainMap failed', fallbackErr);
+                }
+            }
             (domains || []).forEach(dom => {
                 const o = document.createElement('option');
                 o.value = o.textContent = dom;
@@ -1836,9 +1849,9 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                     lessonDropdown.disabled = true;
                     (async () => {
                         try {
-                            console.debug('[debug] load codes for', { subject, standard, grade, domain });
+                            console.debug('Requesting codes for', { subject, standard, grade, domain });
                             const codes = await api('getCodesForSubjectStandardGradeDomain', { subject, standard, grade, domain });
-                            console.debug('[debug] codes result', codes);
+                            console.debug('Received codes:', codes);
                             codes.forEach(cd => {
                                 const o = document.createElement('option');
                                 o.value = o.textContent = cd;
