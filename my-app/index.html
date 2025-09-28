@@ -247,7 +247,8 @@
                     const loginContainer = $('loginContainer'); if (loginContainer) loginContainer.style.display = 'none';
                     const appHeader = $('appHeader'); if (appHeader) appHeader.style.display = 'flex';
                 } else {
-                    showMessage?.(res?.message || 'Invalid username or password', 'error');
+                    // Prefer server-provided message when available
+                    showMessage?.(res && res.message ? res.message : 'Invalid username or password', 'error');
                 }
             } catch (err) {
                 console.error(err);
