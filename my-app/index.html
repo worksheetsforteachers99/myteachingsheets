@@ -265,6 +265,8 @@
             email: "",
             earnings: 0
         };
+        // Guard variable to prevent concurrent earnings fetches
+        let __earningsFetching = false;
         // Expose on window so other included HTML (Bundle.html) can read it via window.currentUser
         window.currentUser = currentUser;
         
@@ -2959,9 +2961,6 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                 loginForm.dispatchEvent(new Event('submit'));
             }
         });
-
-        // Guard variable to prevent concurrent earnings fetches
-        let __earningsFetching = false;
 
         // Load total earnings from Google Sheet
         function loadTotalEarnings() {
