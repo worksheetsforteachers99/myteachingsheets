@@ -31,16 +31,6 @@
         <select id="bulkGrade">
             <option value="" disabled selected>Select grade</option>
         </select>
-        
-        <label for="bulkDomain">Domain</label>
-        <select id="bulkDomain">
-            <option value="" disabled selected>Select domain</option>
-        </select>
-
-        <label for="bulkLesson">Lesson Code</label>
-        <select id="bulkLesson">
-            <option value="" disabled selected>Select code</option>
-        </select>
         </select>
     
     <!-- App header (shows when logged in) -->
@@ -60,6 +50,7 @@
                     <div class="profile-info">
                         <div class="profile-username" id="profileUsername">Username</div>
                         <div class="profile-account" id="profileAccount">Account Name</div>
+                        <div class="profile-id" id="profileId" style="font-size:0.75rem; opacity:0.85;">ID: -</div>
                     </div>
                 </button>
 
@@ -67,9 +58,9 @@
                     <div class="dropdown-header">
                         <div class="dropdown-username" id="dropdownUsername">Username</div>
                         <div class="dropdown-account" id="dropdownAccount">Account Name</div>
-                        <div class="dropdown-id" id="dropdownId" style="font-size:0.85rem; color:#6c757d;">ID: -</div>
                     </div>
                     <div class="dropdown-menu">
+                        <div class="dropdown-item" id="dropdownId" style="font-size:0.95rem; color:#6c757d; cursor:default;">ID: -</div>
                         <button class="dropdown-item" id="templateButton">Template</button>
                         <button class="dropdown-item">Profile Settings</button>
                         <button class="dropdown-item" id="payoutMethodButton">Payout Method</button>
@@ -435,6 +426,7 @@
             // Update profile display
             if (profileUsername) profileUsername.textContent = currentUser.username;
             if (profileAccount) profileAccount.textContent = currentUser.accountName || 'Account Name';
+            if (profileId) profileId.textContent = 'ID: ' + (currentUser.id || '-');
             
             // Update dropdown
             if (dropdownUsername) dropdownUsername.textContent = currentUser.username;
