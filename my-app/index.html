@@ -530,8 +530,10 @@ async function populateSubjects() {
   domainDropdown.disabled   = true; lessonDropdown.disabled = true;
 
         // ① Load Subjects via API proxy
-        try {
+            try {
+            console.debug('Requesting subjects...');
             const subjects = await api('getSubjects');
+            console.debug('Received subjects', subjects);
             (subjects || []).forEach(s => {
                 const o = document.createElement('option');
                 o.value = s; o.textContent = s;
@@ -563,7 +565,9 @@ async function populateSubjects() {
         setSelectsDisabledExcept([], true);
         standardDropdown.disabled = true;
         try {
+            console.debug('Requesting standards for subject:', subj);
             const standards = await api('getStandardsForSubject', { subject: subj });
+            console.debug('Received standards', standards);
             (standards || []).forEach(st => {
                 const o = document.createElement('option');
                 o.value = o.textContent = st;
@@ -605,7 +609,9 @@ async function populateSubjects() {
         setSelectsDisabledExcept([], true);
         gradeDropdown.disabled = true;
         try {
+            console.debug('Requesting grades for', { subject, standard });
             const grades = await api('getGradesForSubjectAndStandard', { subject, standard });
+            console.debug('Received grades', grades);
             (grades || []).forEach(g => {
                 const o = document.createElement('option');
                 o.value = o.textContent = g;
@@ -649,7 +655,9 @@ async function populateSubjects() {
         setSelectsDisabledExcept([], true);
         domainDropdown.disabled = true;
         try {
+            console.debug('Requesting domains for', { subject, standard, grade });
             const domains = await api('getDomainsForSubjectStandardGrade', { subject, standard, grade });
+            console.debug('Received domains', domains);
             (domains || []).forEach(dom => {
                 const o = document.createElement('option');
                 o.value = o.textContent = dom;
@@ -1834,7 +1842,9 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                     lessonDropdown.disabled = true;
                     (async () => {
                         try {
+                            console.debug('Requesting codes for', { subject, standard, grade, domain });
                             const codes = await api('getCodesForSubjectStandardGradeDomain', { subject, standard, grade, domain });
+                            console.debug('Received codes', codes);
                             codes.forEach(cd => {
                                 const o = document.createElement('option');
                                 o.value = o.textContent = cd;
