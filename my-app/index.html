@@ -276,6 +276,18 @@
     <!-- Bundle Panel Filter Sync Script -->
 
     <script>
+        // Small helper to proxy Apps Script calls via our Vercel function
+        async function api(action, payload = {}) {
+            const resp = await fetch('/api/gas', {
+                method: 'POST',
+                headers: { 'Content-Type':'application/json' },
+                body: JSON.stringify({ action, payload })
+            });
+            const json = await resp.json();
+            if (!json || json.ok === false) throw new Error(json && json.error ? json.error : 'Request failed');
+            return json.data;
+        }
+
         // Global variables
         let isLoggedIn = false;
         let currentUser = {
@@ -1894,23 +1906,23 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                       // Disable all selects while lesson codes are loading (including the domain select)
                       if (typeof window.setSelectsDisabledExcept === 'function') window.setSelectsDisabledExcept([], true);
                     lessonDropdown.disabled = true;
-          google.script.run
-            .withSuccessHandler(codes => {
-              codes.forEach(cd => {
-                const o = document.createElement('option');
-                o.value = o.textContent = cd;
-                lessonDropdown.appendChild(o);
-              });
+                    (async () => {
+                        try {
+                            const codes = await api('getCodesForSubjectStandardGradeDomain', { subject, standard, grade, domain });
+                            codes.forEach(cd => {
+                                const o = document.createElement('option');
+                                o.value = o.textContent = cd;
+                                lessonDropdown.appendChild(o);
+                            });
                             lessonDropdown.disabled = codes.length === 0;
+                        } catch (err) {
+                            console.error('Failed to load lesson codes', err);
+                            lessonDropdown.disabled = true;
+                        } finally {
                             // Re-enable selects after lesson codes loaded
                             if (typeof window.setSelectsDisabledExcept === 'function') window.setSelectsDisabledExcept([], false);
-            })
-            .withFailureHandler(err => {
-              console.error('Failed to load lesson codes', err);
-              lessonDropdown.disabled = true;
-                            if (typeof window.setSelectsDisabledExcept === 'function') window.setSelectsDisabledExcept([], false);
-            })
-            .getCodesForSubjectStandardGradeDomain(subject, standard, grade, domain);
+                        }
+                    })();
         });
 
         // Lesson codes are now loaded dynamically from the sheet via getCodesForSubjectStandardGradeDomain
