@@ -649,22 +649,7 @@ async function populateSubjects() {
         setSelectsDisabledExcept([], true);
         domainDropdown.disabled = true;
         try {
-            console.debug('Requesting domains for', { subject, standard, grade });
-            let domains = await api('getDomainsForSubjectStandardGrade', { subject, standard, grade });
-            console.debug('Received domains:', domains);
-            // If server returned empty domains (sheet layout edge-case), derive domains from lessonDomainMap
-            if ((!domains || domains.length === 0) && typeof api === 'function') {
-                try {
-                    const map = await api('getLessonDomainMap', { subject, standard, grade });
-                    console.debug('Received lessonDomainMap fallback:', map);
-                    // map.domainMap is an object { code: domain }
-                    const uniq = new Set();
-                    Object.keys(map.domainMap || {}).forEach(c => { const d = map.domainMap[c]; if (d) uniq.add(d); });
-                    domains = Array.from(uniq);
-                } catch (fallbackErr) {
-                    console.debug('Fallback getLessonDomainMap failed', fallbackErr);
-                }
-            }
+            const domains = await api('getDomainsForSubjectStandardGrade', { subject, standard, grade });
             (domains || []).forEach(dom => {
                 const o = document.createElement('option');
                 o.value = o.textContent = dom;
@@ -1849,9 +1834,7 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                     lessonDropdown.disabled = true;
                     (async () => {
                         try {
-                            console.debug('Requesting codes for', { subject, standard, grade, domain });
                             const codes = await api('getCodesForSubjectStandardGradeDomain', { subject, standard, grade, domain });
-                            console.debug('Received codes:', codes);
                             codes.forEach(cd => {
                                 const o = document.createElement('option');
                                 o.value = o.textContent = cd;
@@ -2448,8 +2431,7 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             }
 
             // Call server to get previous lesson codes and URLs with state
-            // Use safe accessors in case some selects are not present in the DOM
-            const isTF = ((document.getElementById("bulkWorksheetType")?.value) || '') === "True Or False with Passage";
+            const isTF = document.getElementById("bulkWorksheetType").value === "True Or False with Passage";
             const fn   = isTF ? "listPreviouslyGeneratedTF" : "listPreviouslyGenerated";
                         // previous server callback removed; replaced by api() flow below
             (async () => {
@@ -2463,17 +2445,17 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                       return item.accountName && item.accountName.trim() === currentAccount;
                     });
 
-                    // Filter by the currently selected worksheet type (safe access)
-                    const selectedType = (document.getElementById("bulkWorksheetType")?.value || '').trim();
+                    // Filter by the currently selected worksheet type
+                    const selectedType = document.getElementById("bulkWorksheetType").value.trim();
                     recentItems = recentItems.filter(item =>
                       item.worksheetType && item.worksheetType.trim() === selectedType
                     );
 
-                    // Filter by the currently selected grade (safe access)
-                    const selectedGrade = document.getElementById("bulkGrade")?.value || '';
+                    // Filter by the currently selected grade
+                    const selectedGrade = document.getElementById("bulkGrade").value;
 
                     // NEW: Filter by the currently selected subject (backward compatible)
-                    const selectedSubject = document.getElementById("bulkSubject")?.value || '';
+                    const selectedSubject = document.getElementById("bulkSubject").value;
                     if (selectedSubject) {
                       const itemsWithSubject = recentItems.filter(item => item.subject && item.subject.trim());
                       if (itemsWithSubject.length > 0) {
@@ -2483,8 +2465,8 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                       }
                     }
 
-                    // NEW: Filter by the currently selected standard (safe access)
-                    const selectedStandard = document.getElementById("bulkStandard")?.value || '';
+                    // NEW: Filter by the currently selected standard
+                    const selectedStandard = document.getElementById("bulkStandard").value;
                     if (selectedStandard) {
                       recentItems = recentItems.filter(item =>
                         (item.standard || '').trim() === selectedStandard.trim()
