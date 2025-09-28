@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Worksheet Generator</title>
-    <!-- replace GAS style include with: -->
-    <link rel="stylesheet" href="/style.css">
+    <!-- replace GAS style include with local stylesheet -->
+    <link rel="stylesheet" href="public/style.css">
 </head>
 <body>
     <!-- Floating Lesson Search Panel -->
@@ -31,56 +31,53 @@
         <select id="bulkGrade">
             <option value="" disabled selected>Select grade</option>
         </select>
+        </select>
+    
+    <!-- App header (shows when logged in) -->
+    <header class="app-header" id="appHeader">
+        <div class="header-left">
+            <a class="header-logo" href="#">Worksheet Generator</a>
+        </div>
+        <div class="header-right">
+            <div class="earnings-display" id="earningsDisplay" aria-hidden="true">
+                <svg class="earnings-icon" viewBox="0 0 24 24"><path d="M12 1v22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                <span id="earningsAmount">LKR 0.00</span>
+            </div>
+
+            <div class="user-profile" id="userProfile">
+                <button class="profile-button" id="profileButton" aria-haspopup="true" aria-expanded="false">
+                    <div class="profile-avatar" id="profileAvatar">U</div>
+                    <div class="profile-info">
+                        <div class="profile-username" id="profileUsername">Username</div>
+                        <div class="profile-account" id="profileAccount">Account Name</div>
+                    </div>
+                </button>
+
+                <div class="profile-dropdown" id="profileDropdown" role="menu" aria-hidden="true">
+                    <div class="dropdown-header">
                         <div class="dropdown-username" id="dropdownUsername">Username</div>
                         <div class="dropdown-account" id="dropdownAccount">Account Name</div>
                     </div>
                     <div class="dropdown-menu">
-                        <button class="dropdown-item" id="templateButton">
-                            <svg class="dropdown-icon" viewBox="0 0 24 24"><path d="M4 4h16v2H4zM4 10h16v2H4zM4 16h16v2H4z"/></svg>
-                            Template
-                        </button>
-                        <button class="dropdown-item">
-                            <svg class="dropdown-icon" viewBox="0 0 24 24">
-                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                            </svg>
-                            Profile Settings
-                        </button>
-                        <button class="dropdown-item" id="payoutMethodButton">
-                            <svg class="dropdown-icon" viewBox="0 0 24 24">
-                                <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
-                            </svg>
-                            Payout Method
-                        </button>
-                        <button class="dropdown-item">
-                            <svg class="dropdown-icon" viewBox="0 0 24 24">
-                                <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
-                            </svg>
-                            Settings
-                        </button>
-                        <!-- Prompts submenu (Lesson + Bundle) -->
-                        <div class="dropdown-item dropdown-prompts" id="promptItem" tabindex="0">
-                            <svg class="dropdown-icon" viewBox="0 0 24 24"><path d="M3 3h18v2H3zM3 7h18v2H3zM3 11h18v2H3z"/></svg>
-                            Prompts
+                        <button class="dropdown-item" id="templateButton">Template</button>
+                        <button class="dropdown-item">Profile Settings</button>
+                        <button class="dropdown-item" id="payoutMethodButton">Payout Method</button>
+                        <button class="dropdown-item">Settings</button>
+                        <div class="dropdown-item dropdown-prompts" id="promptItem" tabindex="0">Prompts
                             <div class="tutorials-submenu" id="promptsSubmenu" aria-hidden="true">
                                 <div class="tutorial-link" id="lessonPromptSub" role="button" tabindex="0">Lesson Prompt</div>
                                 <div class="tutorial-link" id="bundlePromptSub" role="button" tabindex="0">Bundle Prompt</div>
                             </div>
                         </div>
-                        <div class="dropdown-item dropdown-tutorials" id="tutorialsItem" tabindex="0">
-                            <svg class="dropdown-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 7l10 5v6l-10 5-10-5v-6l10-5z"/></svg>
-                            Tutorials
+                        <div class="dropdown-item dropdown-tutorials" id="tutorialsItem" tabindex="0">Tutorials
                             <div class="tutorials-submenu" id="tutorialsSubmenu" aria-hidden="true"></div>
                         </div>
-                        <!-- old standalone Bundle Prompt removed; now inside Prompt submenu -->
-                        <button class="dropdown-item logout" id="logoutButton">
-                            <svg class="dropdown-icon" viewBox="0 0 24 24">
-                                <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
-                            </svg>
-                            Logout
-                        </button>
+                        <button class="dropdown-item logout" id="logoutButton">Logout</button>
                     </div>
                 </div>
             </div>
+        </div>
+    </header>
         </div>
     </header>
 
@@ -310,6 +307,10 @@
         
         // Persistent login keys
         const LOCAL_STORAGE_KEY = "appscript_user_session";
+
+    // Ensure ARIA reflects initial collapsed state
+    if (profileButton) profileButton.setAttribute('aria-expanded', 'false');
+    if (profileDropdown) profileDropdown.setAttribute('aria-hidden', 'true');
         
         function showMessage(text, type = 'error') {
             messageContainer.textContent = text;
@@ -1245,12 +1246,23 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
     }
 };
         
-        // Profile dropdown functionality (safe attachments)
-        on('profileButton', 'click', (e) => { e.stopPropagation(); const pd = $('profileDropdown'); if (pd) pd.classList.toggle('show'); });
-        // Close dropdown when clicking outside (guard elements)
+        // Profile dropdown functionality (safe attachments) with ARIA updates
+        on('profileButton', 'click', (e) => {
+            e.stopPropagation();
+            const pd = $('profileDropdown'); const pb = $('profileButton');
+            if (!pd || !pb) return;
+            const isShown = pd.classList.toggle('show');
+            pb.setAttribute('aria-expanded', isShown ? 'true' : 'false');
+            pd.setAttribute('aria-hidden', isShown ? 'false' : 'true');
+        });
+        // Close dropdown when clicking outside (guard elements) and update ARIA
         document.addEventListener('click', (e) => {
             const pd = $('profileDropdown'); const pb = $('profileButton');
-            if (pd && pb && !pd.contains(e.target) && !pb.contains(e.target)) pd.classList.remove('show');
+            if (pd && pb && !pd.contains(e.target) && !pb.contains(e.target)) {
+                pd.classList.remove('show');
+                pb.setAttribute('aria-expanded', 'false');
+                pd.setAttribute('aria-hidden', 'true');
+            }
         });
         // Logout functionality (already attached via on() above but keep local confirmation flow)
         on('logoutButton', 'click', () => { if (confirm('Are you sure you want to logout?')) logout(); });
