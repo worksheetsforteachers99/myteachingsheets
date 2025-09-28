@@ -50,6 +50,7 @@
                     <div class="profile-info">
                         <div class="profile-username" id="profileUsername">Username</div>
                         <div class="profile-account" id="profileAccount">Account Name</div>
+                        <div class="profile-id" id="profileId" style="font-size:0.75rem; opacity:0.85;">ID: -</div>
                     </div>
                 </button>
 
@@ -57,6 +58,7 @@
                     <div class="dropdown-header">
                         <div class="dropdown-username" id="dropdownUsername">Username</div>
                         <div class="dropdown-account" id="dropdownAccount">Account Name</div>
+                        <div class="dropdown-id" id="dropdownId" style="font-size:0.85rem; color:#6c757d;">ID: -</div>
                     </div>
                     <div class="dropdown-menu">
                         <button class="dropdown-item" id="templateButton">Template</button>
@@ -414,6 +416,8 @@
         
         function updateUserProfile(userData) {
             currentUser = { ...currentUser, ...userData };
+            // Ensure id is present if provided
+            if (userData && userData.id) currentUser.id = userData.id;
             
             // Update avatar with first letter of username
             const firstLetter = currentUser.username.charAt(0).toUpperCase();
@@ -422,10 +426,12 @@
             // Update profile display
             if (profileUsername) profileUsername.textContent = currentUser.username;
             if (profileAccount) profileAccount.textContent = currentUser.accountName || 'Account Name';
+            if (profileId) profileId.textContent = 'ID: ' + (currentUser.id || '-');
             
             // Update dropdown
             if (dropdownUsername) dropdownUsername.textContent = currentUser.username;
             if (dropdownAccount) dropdownAccount.textContent = currentUser.accountName || 'Account Name';
+            if (dropdownId) dropdownId.textContent = 'ID: ' + (currentUser.id || '-');
             
             // Update price display (will be loaded separately)
             if (earningsAmount) earningsAmount.textContent = 'LKR 0.00';
