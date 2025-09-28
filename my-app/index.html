@@ -223,18 +223,9 @@
                 headers: { 'Content-Type':'application/json' },
                 body: JSON.stringify({ action, payload })
             });
-            // Always read text first so we can handle HTML error pages gracefully
-            const text = await resp.text();
-            // Try parsing JSON; if it's not JSON, surface a clearer error
-            try {
-                const json = JSON.parse(text);
-                if (!json || json.ok === false) throw new Error(json && json.error ? json.error : 'Request failed');
-                return json.data;
-            } catch (err) {
-                // If response wasn't JSON, include a short snippet to help debugging
-                const snippet = (text || '').slice(0, 320);
-                throw new Error(`Invalid JSON from /api/gas (status=${resp.status}): ${snippet}`);
-            }
+            const json = await resp.json();
+            if (!json || json.ok === false) throw new Error(json && json.error ? json.error : 'Request failed');
+            return json.data;
         }
 
         // --- tiny DOM helpers to safely attach listeners and avoid null errors ---
@@ -1778,8 +1769,14 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             return new Promise(resolve => { modalResolve = resolve; });
         }
 
-        on('modalReplaceBtn', 'click', () => { const rm = $('replaceModal'); if (rm) rm.style.display = 'none'; if (typeof modalResolve === 'function') modalResolve('replace'); });
-        on('modalSkipBtn', 'click', () => { const rm = $('replaceModal'); if (rm) rm.style.display = 'none'; if (typeof modalResolve === 'function') modalResolve('skip'); });
+        modalReplaceBtn.addEventListener('click', () => {
+            replaceModal.style.display = 'none';
+            modalResolve('replace');
+        });
+        modalSkipBtn.addEventListener('click', () => {
+            replaceModal.style.display = 'none';
+            modalResolve('skip');
+        });
         let latestDocUrl = null, latestAnswerKeyUrl = null, progInt;
         let bulkCancelled = false;
 
@@ -1792,8 +1789,8 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
         const bulkLesson = document.getElementById('bulkLesson');
         
         // Populate lesson codes on domain change in Bulk Mode
-                on('bulkDomain', 'change', function () {
-                    const domain = (this && this.value) || document.getElementById('bulkDomain')?.value;
+        document.getElementById('bulkDomain').addEventListener('change', function () {
+          const domain = this.value;
           const subject  = document.getElementById('bulkSubject').value;
           const standard = document.getElementById('bulkStandard').value;
           const grade    = document.getElementById('bulkGrade').value;
@@ -2935,15 +2932,14 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             }
         });
 
-        // Handle worksheet type changes (guarded)
-        on('bulkWorksheetType', 'change', function() {
-            const val = (this && this.value) || document.getElementById('bulkWorksheetType')?.value;
-            if (!val) return;
-            // Save selection to localStorage
-            localStorage.setItem('sel_worksheet_type', val);
-            // Reload history with new type
-            if (typeof loadPrevious === 'function') loadPrevious();
-        });
+        // Handle worksheet type changes
+        document.getElementById('bulkWorksheetType')
+            .addEventListener('change', function() {
+                // Save selection to localStorage
+                localStorage.setItem('sel_worksheet_type', this.value);
+                // Reload history with new type
+                loadPrevious();
+            });
 
         // Add enter key support for better UX
         document.addEventListener('keydown', function(e) {
