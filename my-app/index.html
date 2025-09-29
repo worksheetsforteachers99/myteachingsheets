@@ -2509,50 +2509,88 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                         // Call server to get previous lesson codes and URLs with state (master sheet)
                         (async () => {
                                 try {
-                                        const previousItems = await api('getLessonsWithState');
-                                        bulkTableContainer.classList.remove("table-blinking"); // Remove blinking class on success
+                                                                                const previousItems = await api('getLessonsWithState');
+                                                                                bulkTableContainer.classList.remove("table-blinking"); // Remove blinking class on success
+                                                                                // Debug: log counts and selected filters to aid troubleshooting
+                                                                                try {
+                                                                                    console.debug('loadPrevious: total previousItems=', (previousItems||[]).length);
+                                                                                } catch (e) {}
 
-                                        // Only display lessons for the current account
-                                        const currentAccount = (currentUser.accountName || '').trim();
-                                        let recentItems = (previousItems || []).filter(item => {
-                                            return item.accountName && item.accountName.trim() === currentAccount;
-                                        });
+                                                                                // Determine which previous items belong to the current user/account.
+                                                                                // Prefer accountName when available; otherwise fall back to username/email matching.
+                                                                                const acct = (currentUser.accountName || '').trim().toLowerCase();
+                                                                                const uname = (currentUser.username || '').trim().toLowerCase();
+                                                                                const uemail = (currentUser.email || '').trim().toLowerCase();
+                                                                                let recentItems = (previousItems || []).filter(item => {
+                                                                                    try {
+                                                                                        const itemAcct = (item.accountName || '').trim().toLowerCase();
+                                                                                        const itemUploader = (item.uploaderUserName || item.userName || '').trim().toLowerCase();
+                                                                                        const itemEmail = (item.userEmail || '').trim().toLowerCase();
+                                                                                        if (acct) {
+                                                                                            return itemAcct && itemAcct === acct;
+                                                                                        }
+                                                                                        // No accountName on current user — accept items uploaded by this user name or email (case-insensitive)
+                                                                                        if (uname && itemUploader && itemUploader === uname) return true;
+                                                                                        if (uemail && itemEmail && itemEmail === uemail) return true;
+                                                                                        return false;
+                                                                                    } catch (e) { return false; }
+                                                                                });
 
-                    // Filter by the currently selected worksheet type
-                    const selectedType = document.getElementById("bulkWorksheetType").value.trim();
-                    recentItems = recentItems.filter(item =>
-                      item.worksheetType && item.worksheetType.trim() === selectedType
-                    );
+                                        // Filter by the currently selected worksheet type only if a type is chosen
+                                        const selectedType = (document.getElementById("bulkWorksheetType")?.value || '').trim();
+                                                            if (selectedType) {
+                                                                const stLc = selectedType.toLowerCase();
+                                                                recentItems = recentItems.filter(item => (item.worksheetType || '').trim().toLowerCase() === stLc);
+                                                            }
 
                     // Filter by the currently selected grade
                     const selectedGrade = document.getElementById("bulkGrade").value;
 
                     // NEW: Filter by the currently selected subject (backward compatible)
                     const selectedSubject = document.getElementById("bulkSubject").value;
-                    if (selectedSubject) {
-                      const itemsWithSubject = recentItems.filter(item => item.subject && item.subject.trim());
-                      if (itemsWithSubject.length > 0) {
-                        recentItems = recentItems.filter(item =>
-                          (item.subject || '').trim() === selectedSubject.trim()
-                        );
-                      }
-                    }
+                                        if (selectedSubject) {
+                                            const selSubLc = selectedSubject.trim().toLowerCase();
+                                            const itemsWithSubject = recentItems.filter(item => item.subject && item.subject.trim());
+                                            if (itemsWithSubject.length > 0) {
+                                                recentItems = recentItems.filter(item => (item.subject || '').trim().toLowerCase() === selSubLc);
+                                            }
+                                        }
 
                     // NEW: Filter by the currently selected standard
                     const selectedStandard = document.getElementById("bulkStandard").value;
-                    if (selectedStandard) {
-                      recentItems = recentItems.filter(item =>
-                        (item.standard || '').trim() === selectedStandard.trim()
-                      );
-                    }
+                                        if (selectedStandard) {
+                                            const selStdLc = selectedStandard.trim().toLowerCase();
+                                            recentItems = recentItems.filter(item => (item.standard || '').trim().toLowerCase() === selStdLc );
+                                        }
 
-                    if (selectedGrade) {
-                      recentItems = recentItems.filter(item => String(item.grade) === String(selectedGrade));
-                    }
+                                                            if (selectedGrade) {
+                                                                recentItems = recentItems.filter(item => String(item.grade) === String(selectedGrade));
+                                                            }
+                                                            // Debug: log number after initial filtering
+                                                            try { console.debug('loadPrevious: after account/type/subject/std/grade filter recentItems=', (recentItems||[]).length, 'filters:', {selectedSubject, selectedStandard, selectedGrade, selectedType}); } catch(e) {}
 
                     const selectedSubjectVal = selectedSubject || '';
                     const selectedStandardVal = selectedStandard || '';
                     const selectedGradeVal = selectedGrade;
+
+                    // If no items found for the current account/user, fallback to showing items matching subject/standard/grade/type across accounts
+                    if ((!recentItems || recentItems.length === 0) && (selectedSubject || selectedStandard || selectedGrade || selectedType)) {
+                        try {
+                            const globalMatch = (previousItems || []).filter(item => {
+                                try {
+                                    if (selectedType && ((item.worksheetType || '').trim().toLowerCase() !== (selectedType || '').trim().toLowerCase())) return false;
+                                    if (selectedGrade && String(item.grade) !== String(selectedGrade)) return false;
+                                    if (selectedStandard && ((item.standard || '').trim().toLowerCase() !== (selectedStandard || '').trim().toLowerCase())) return false;
+                                    if (selectedSubject && ((item.subject || '').trim().toLowerCase() !== (selectedSubject || '').trim().toLowerCase())) return false;
+                                    return true;
+                                } catch (e) { return false; }
+                            });
+                            if (globalMatch && globalMatch.length > 0) {
+                                console.info('loadPrevious: no items for current account — falling back to global matches (across accounts).');
+                                recentItems = globalMatch;
+                            }
+                        } catch (e) { /* ignore fallback errors */ }
+                    }
 
                     // Request canonical ordering and domain map from server
                     try {
