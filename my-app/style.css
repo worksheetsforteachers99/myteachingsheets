@@ -13,13 +13,13 @@
       --success: #28a745;
       --header-height: 56px;
       --footer-height: 56px;
-      /* Column width tokens used by the shared colgroup */
-      --col-grade:     64px;
-      --col-lesson:   140px;
-      --col-worksheet:160px;
-      --col-answer:   160px;
-      --col-lastedit: 110px;
-      --col-package:  160px;
+  /* Column width tokens used by the shared colgroup (trimmed defaults) */
+  --col-grade:     56px;
+  --col-lesson:   120px;
+  --col-worksheet:140px;
+  --col-answer:   140px;
+  --col-lastedit:  96px;
+  --col-package:  120px;
     }
       /* Utilities and moved inline styles from index.html */
       /* Separator inside panels */
@@ -213,32 +213,17 @@
         .domain-table th, .domain-table td{
           white-space:nowrap; border-bottom:1px solid rgba(16,42,67,0.06); padding:10px 12px; background:#fff;
         }
+
+        /* Allow wrapping for long lesson names and prevent table overflow */
+        .domain-table th,
+        .domain-table td,
+        .shared-header-table th {
+          white-space: normal;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
         .domain-table tbody tr:nth-child(odd){ background:#fafbfd; }
         .domain-table tbody tr:hover{ background:#f5fbff; }
-
-        /* Wrapper used by scripts that inject large tables; keep them inside viewport with horizontal scroll */
-        .table-scroll-container {
-          width: 100%;
-          overflow-x: auto;
-          overflow-y: auto;
-          /* Make vertical space fit inside the viewport below the fixed header */
-          max-height: calc(100vh - var(--header-height) - var(--footer-height) - 40px);
-          -webkit-overflow-scrolling: touch;
-        }
-
-        /* Generic table fallback rules for injected #bulkTable and other wide tables */
-        #bulkTable, .domain-table, .shared-header-table {
-          width: 100%;
-          table-layout: fixed; /* allow columns to respect colgroup widths and avoid exploding width */
-          border-collapse: separate;
-        }
-
-        /* Prevent table content from pushing the page horizontally; allow cell content to ellipsize if too long */
-        #bulkTable td, #bulkTable th, .domain-table td, .domain-table th {
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
 
         /* Keep only the Package column sticky on the right */
         .domain-table th.menu-cell, .domain-table td.menu-cell{ z-index: 2; background: #fff; }
@@ -422,6 +407,43 @@
         box-shadow: 0 0 10px rgba(40, 167, 69, 0.4);
       }
     }
+
+
+/* Responsive adjustments to prevent table overflow and reduce horizontal scroll */
+
+/* Medium screens (laptops/tablets) */
+@media (max-width: 1200px) {
+  .domain-table th,
+  .domain-table td {
+    padding: 6px 8px;
+    font-size: 0.85rem;
+  }
+  .domain-card__title { font-size: 14px; }
+  .domain-card__meta { font-size: 11px; }
+}
+
+/* Small screens (mobile/compact) */
+@media (max-width: 768px) {
+  :root {
+    --col-grade:     40px;
+    --col-lesson:    80px;
+    --col-worksheet:100px;
+    --col-answer:   100px;
+    --col-lastedit:  80px;
+    --col-package:   90px;
+  }
+  .domain-table th,
+  .domain-table td {
+    font-size: 0.8rem;
+    padding: 4px 6px;
+  }
+  /* Hide "Last Edit" column to save space */
+  .domain-table th:nth-child(5),
+  .domain-table td:nth-child(5),
+  .shared-header-table th:nth-child(5) {
+    display: none;
+  }
+}
 
     .earnings-icon {
       width: 16px;
