@@ -277,16 +277,39 @@
 
         // Connect Account button handler (opens Google Identity prompt)
         async function connectAccount() {
-            if (!(window.google && google.accounts && google.accounts.id)) {
-                alert('Google sign-in not loaded. Please try again shortly.');
-                return;
+            try {
+                // Wait for the Google Identity library to be ready (use a lightweight loop)
+                const start = Date.now();
+                const timeoutMs = 8000;
+                while (!(window.google && google.accounts && google.accounts.id)) {
+                    if (Date.now() - start > timeoutMs) throw new Error('Google sign-in not loaded');
+                    await new Promise(r => setTimeout(r, 100));
+                }
+
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: onGoogleCredentialResponse,
+                    ux_mode: 'popup'
+                });
+
+                // Try once; if prompt is skipped or not displayed, retry shortly
+                let retried = false;
+                google.accounts.id.prompt((notification) => {
+                    try {
+                        const notDisplayed = notification && typeof notification.isNotDisplayed === 'function' && notification.isNotDisplayed();
+                        const skipped = notification && typeof notification.isSkippedMoment === 'function' && notification.isSkippedMoment();
+                        if ((notDisplayed || skipped) && !retried) {
+                            retried = true;
+                            setTimeout(() => google.accounts.id.prompt(), 300);
+                        }
+                    } catch (e) {
+                        // ignore notification parsing errors
+                    }
+                });
+            } catch (e) {
+                console.error('connectAccount failed', e);
+                alert(e && e.message ? e.message : 'Failed to connect account');
             }
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: onGoogleCredentialResponse,
-                ux_mode: 'popup'
-            });
-            google.accounts.id.prompt();
         }
 
         async function onGoogleCredentialResponse(resp) {
@@ -344,7 +367,7 @@
                         const auth = (typeof getAuthState === 'function') ? getAuthState() : (window.__authState || {});
                         if (!auth || !auth.idToken) {
                             // Only prompt if there isn't already an idToken stored
-                            connectAccount(); // opens the Google Identity popup and posts ID token to backend
+                            await connectAccount(); // opens the Google Identity popup and posts ID token to backend
                         }
                     } catch (e) {
                         console.warn('Auto-connect after login failed:', e);
