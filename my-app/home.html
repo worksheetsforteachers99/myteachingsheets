@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home - Worksheet Generator</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    /* small overrides for the home hero and modal */
+    .home-hero{ max-width:980px; margin:3rem auto; background:var(--card); padding:2rem; border-radius:14px; box-shadow:var(--shadow); }
+    .home-hero h1{ margin:0 0 .5rem; color:var(--brand-dark); }
+    .home-hero p{ color:#5b7083; margin:0 0 1rem; }
+    .welcome-modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); z-index:50; }
+    .welcome-card{ background:#fff; padding:1.5rem; border-radius:12px; width:min(680px,94%); box-shadow:0 10px 40px rgba(0,0,0,0.2); }
+    .welcome-card h2{ margin-top:0; }
+    .welcome-actions{ display:flex; gap:.5rem; justify-content:flex-end; margin-top:1rem; }
+    .btn-ghost{ background:transparent; border:1px solid #e3e8ee; padding:8px 12px; border-radius:8px; cursor:pointer; }
+    .btn-primary{ background:var(--brand); color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
+    .dont-show-row{ display:flex; align-items:center; gap:.5rem; margin-top:.75rem; color:#6c757d; }
+  </style>
+</head>
+<body class="app-mode">
+  <header class="site-header">
+    <div class="site-brand">
+      <div class="logo">Worksheet Generator</div>
+    </div>
+    <div class="site-search">
+      <input type="search" placeholder="Search resources, lessons, worksheets…" aria-label="Search">
+    </div>
+    <div class="site-actions">
+      <a href="#login" class="btn-ghost">Log In</a>
+      <a href="#signup" class="btn-primary">Sign Up</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero-banner">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <div style="font-size:12px; color:#6c757d; font-weight:700;">WELCOME TO WORKSHEETS</div>
+          <h1>Where extraordinary teachers share their most innovative ideas</h1>
+          <p>Explore curated resources, lesson packs and editable worksheets created by educators like you.</p>
+          <div class="hero-cta"><a class="btn-primary" href="#explore">Explore Now</a></div>
+        </div>
+        <div class="hero-figure" style="background-image: url('/public/hero-sample.jpg');"></div>
+      </div>
+    </section>
+
+    <nav class="category-nav" aria-label="Categories">
+      <a href="#grade">Grade</a>
+      <a href="#resource">Resource type</a>
+      <a href="#seasonal">Seasonal</a>
+      <a href="#ela">ELA</a>
+      <a href="#math">Math</a>
+      <a href="#science">Science</a>
+      <a href="#social">Social studies</a>
+    </nav>
+
+    <section class="resources-section">
+      <h2>Explore Elementary School Resources</h2>
+      <div class="resources-grid">
+        <div class="resource-card">
+          <div class="resource-thumb" style="background-image:url('/public/sample1.jpg')"></div>
+          <div class="resource-body">
+            <div class="resource-title">Five Senses Sorting Activity</div>
+            <div class="resource-meta">5 senses cards + 25 picture cards</div>
+          </div>
+        </div>
+        <div class="resource-card">
+          <div class="resource-thumb" style="background-image:url('/public/sample2.jpg')"></div>
+          <div class="resource-body">
+            <div class="resource-title">Subitizing War Number Sense</div>
+            <div class="resource-meta">Numbers 0-20</div>
+          </div>
+        </div>
+        <div class="resource-card">
+          <div class="resource-thumb" style="background-image:url('/public/sample3.jpg')"></div>
+          <div class="resource-body">
+            <div class="resource-title">Editable Spelling Activities</div>
+            <div class="resource-meta">Editable pages</div>
+          </div>
+        </div>
+        <div class="resource-card">
+          <div class="resource-thumb" style="background-image:url('/public/sample4.jpg')"></div>
+          <div class="resource-body">
+            <div class="resource-title">Sentence Frames</div>
+            <div class="resource-meta">Kindergarten & 1st Grade</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="welcomeModal" class="welcome-modal" style="display:none;">
+    <div class="welcome-card" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+      <h2 id="welcomeTitle">Welcome!</h2>
+      <p>Thanks for signing in. This quick tour will help you get started. You'll see this once after login unless you choose "Don't show again".</p>
+      <div class="dont-show-row">
+        <input type="checkbox" id="dontShowAgain" />
+        <label for="dontShowAgain">Don't show again</label>
+      </div>
+      <div class="welcome-actions">
+        <button id="skipWelcome" class="btn-ghost">Skip</button>
+        <button id="startTour" class="btn-primary">Get Started</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Show welcome modal on first visit after login. Persist preference in localStorage.
+    (function(){
+      const key = 'home_first_visit_shown_v1';
+      const prefKey = 'home_dont_show_again_v1';
+      function isFirstVisit() {
+        try { return !localStorage.getItem(key); } catch(e){ return true; }
+      }
+      function dontShowAgain() {
+        try { return localStorage.getItem(prefKey) === '1'; } catch(e){ return false; }
+      }
+      const modal = document.getElementById('welcomeModal');
+      const checkbox = document.getElementById('dontShowAgain');
+      if (!modal) return;
+      // if user previously chose don't show again, mark as shown and skip
+      if (dontShowAgain()) { try { localStorage.setItem(key, '1'); } catch(e){}; return; }
+      if (isFirstVisit()) {
+        modal.style.display = 'flex';
+      }
+      document.getElementById('skipWelcome').addEventListener('click', function(){
+        try { localStorage.setItem(key,'1'); if (checkbox.checked) localStorage.setItem(prefKey,'1'); } catch(e){}
+        modal.style.display='none';
+      });
+      document.getElementById('startTour').addEventListener('click', function(){
+        try { localStorage.setItem(key,'1'); if (checkbox.checked) localStorage.setItem(prefKey,'1'); } catch(e){}
+        modal.style.display='none';
+        // navigate to create or tour anchor; this is a placeholder for a guided tour
+        location.hash = '#create';
+      });
+    })();
+  </script>
+</body>
+</html>
