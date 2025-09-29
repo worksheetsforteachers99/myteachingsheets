@@ -51,15 +51,7 @@
 
       /* Main app and bulk container defaults */
       .main-app { background: transparent; }
-      #bulkTableContainer { background: transparent; max-width: 100%; overflow: auto; }
-
-      /* When tables are wide, allow internal horizontal scrolling but keep them within viewport */
-      .table-scroll-container {
-        width: 100%;
-        overflow-x: auto;
-      }
-      /* Ensure inner tables don't exceed container width in awkward ways */
-      .table-scroll-container table { width: 100%; max-width: 100%; table-layout: auto; }
+      #bulkTableContainer { background: transparent; }
 
       /* Modal overlay and dialog moved from inline styles */
       #replaceModal {
@@ -187,8 +179,7 @@
           border-radius:12px;
           box-shadow: 0 6px 18px rgba(16,42,67,0.06);
           margin: 14px 0;
-          /* allow horizontal scrolling inside domain cards instead of clipping or overflowing the page */
-          overflow: auto;
+          overflow:hidden;
         }
 
         .domain-card__header{
@@ -219,13 +210,8 @@
         }
         .domain-table thead th:first-child{ border-top-left-radius:8px; }
         .domain-table thead th:last-child{ border-top-right-radius:8px; }
-        /* Allow table cells to wrap so the table doesn't force horizontal overflow
-           Use word-break to keep long words from overflowing as well. */
         .domain-table th, .domain-table td{
-          white-space: normal; /* allow wrapping */
-          word-break: break-word;
-          border-bottom:1px solid rgba(16,42,67,0.06);
-          padding:10px 12px; background:#fff;
+          white-space:nowrap; border-bottom:1px solid rgba(16,42,67,0.06); padding:10px 12px; background:#fff;
         }
         .domain-table tbody tr:nth-child(odd){ background:#fafbfd; }
         .domain-table tbody tr:hover{ background:#f5fbff; }
@@ -1238,6 +1224,7 @@
     .table-scroll-container {
       height: 100%;      /* take full height of the new fixed panel */
       overflow-y: auto;
+      overflow-x: auto; /* allow horizontal scroll instead of overflow past viewport */
     }
     /* --- Main table panel (right side) – matches left panel height & padding --- */
     #bulkTableContainer {
@@ -1260,6 +1247,27 @@
 
     #bulkTable th, #bulkTable td {
       border: none;
+    }
+
+    /* Fix: allow cells to shrink and set sane column widths so table doesn't push past container */
+    .domain-table th, .domain-table td, #bulkTable th, #bulkTable td {
+      min-width: 0; /* prevents long content from forcing column to expand unexpectedly */
+    }
+
+    /* Explicit column widths (fallback for browsers that respect col widths) */
+    .domain-table col:nth-child(1), #bulkTable col:nth-child(1) { width: var(--col-grade); }
+    .domain-table col:nth-child(2), #bulkTable col:nth-child(2) { width: 100px; /* lesson */ }
+    .domain-table col:nth-child(3), #bulkTable col:nth-child(3) { width: var(--col-worksheet); }
+    .domain-table col:nth-child(4), #bulkTable col:nth-child(4) { width: var(--col-answer); }
+    .domain-table col:nth-child(5), #bulkTable col:nth-child(5) { width: var(--col-lastedit); }
+    .domain-table col:nth-child(6), #bulkTable col:nth-child(6) { width: 120px; /* package/actions */ }
+
+    /* Keep the sticky package menu a few pixels off the window edge so it doesn't accentuate overflow */
+    .domain-table th.menu-cell.package,
+    .domain-table td.menu-cell.package,
+    #bulkTable th.menu-cell.package,
+    #bulkTable td.menu-cell.package {
+      right: 12px;
     }
 
     /* Header pills */
@@ -1378,18 +1386,29 @@
     }
 
     @media (max-width: 480px) {
-      .main-content { padding: 1em; }
-
-      /* Hide less-important columns on very small screens */
-      .domain-table th:nth-child(4), .domain-table td:nth-child(4), /* Answer Key */
-      .domain-table th:nth-child(6), .domain-table td:nth-child(6)  /* Package */ {
-        display: none;
+      .main-content {
+        padding: 1em;
+      }
+            
+      .login-container, .main-app {
+        padding: 2em;
+      }
+            
+      .logo h1 {
+        font-size: 1.5em;
       }
 
-      .logo h1 { font-size: 1.5em; }
-      .app-header { padding: 0 0.5rem; }
-      .header-logo { font-size: 1.2rem; }
-      .earnings-display { display: none; }
+      .app-header {
+        padding: 0 0.5rem;
+      }
+
+      .header-logo {
+        font-size: 1.2rem;
+      }
+
+      .earnings-display {
+        display: none;
+      }
     }
 
     /* Hide login when app is shown */
@@ -1447,3 +1466,4 @@ body:not(.app-mode) #lesson-search-panel {
 }
 
 /* bundle-related styles removed (panel moved into domain headers) */
+
