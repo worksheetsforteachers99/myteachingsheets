@@ -19,7 +19,7 @@
       --col-worksheet:160px;
       --col-answer:   160px;
       --col-lastedit: 110px;
-      --col-package:  160px;
+  --col-package:  140px;
     }
       /* Utilities and moved inline styles from index.html */
       /* Separator inside panels */
@@ -221,6 +221,17 @@
         .domain-table th.menu-cell.package, .domain-table td.menu-cell.package{
           position: sticky; right: 0; /* package is now the rightmost sticky column */
           box-shadow: -4px 0 8px rgba(16,42,67,.06);
+        }
+
+        /* Responsive: disable sticky package column on narrow screens to avoid horizontal overflow */
+        @media (max-width: 1000px) {
+          .domain-table th.menu-cell.package, .domain-table td.menu-cell.package{
+            position: static;
+            right: auto;
+            box-shadow: none;
+          }
+          /* allow package cell content to wrap and shrink on small screens */
+          .domain-table th.menu-cell.package, .domain-table td.menu-cell.package{ white-space: normal; }
         }
 
         /* Optional density support you can toggle with .table-dense */
@@ -1225,6 +1236,7 @@
       height: 100%;      /* take full height of the new fixed panel */
       overflow-y: auto;
       overflow-x: auto; /* allow horizontal scroll instead of overflow past viewport */
+      max-width: 100%;
     }
     /* --- Main table panel (right side) – matches left panel height & padding --- */
     #bulkTableContainer {
@@ -1243,6 +1255,7 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 1em;
+      table-layout: fixed; /* prefer fixed layout so columns obey col widths */
     }
 
     #bulkTable th, #bulkTable td {
@@ -1260,14 +1273,17 @@
     .domain-table col:nth-child(3), #bulkTable col:nth-child(3) { width: var(--col-worksheet); }
     .domain-table col:nth-child(4), #bulkTable col:nth-child(4) { width: var(--col-answer); }
     .domain-table col:nth-child(5), #bulkTable col:nth-child(5) { width: var(--col-lastedit); }
-    .domain-table col:nth-child(6), #bulkTable col:nth-child(6) { width: 120px; /* package/actions */ }
+  .domain-table col:nth-child(6), #bulkTable col:nth-child(6) { width: 100px; /* package/actions */ }
 
-    /* Keep the sticky package menu a few pixels off the window edge so it doesn't accentuate overflow */
+    /* Package menu: non-sticky to avoid causing horizontal overflow; keep visual spacing via padding */
     .domain-table th.menu-cell.package,
     .domain-table td.menu-cell.package,
     #bulkTable th.menu-cell.package,
     #bulkTable td.menu-cell.package {
-      right: 12px;
+      right: auto;
+      position: static;
+      box-shadow: none;
+      padding-right: 0.75rem;
     }
 
     /* Header pills */
@@ -1302,6 +1318,11 @@
     }
 
     /* First column styling */
+
+      /* On very narrow viewports, allow the table to behave as a block inside the scroll container so it can be scrolled without pushing outside the container */
+      @media (max-width: 720px) {
+        .table-scroll-container table { display: block; width: auto; max-width: 100%; }
+      }
     #bulkTable td:first-child {
       background: #d9e2ec;
       color: var(--fg);
@@ -1462,7 +1483,7 @@ body:not(.app-mode) #lesson-search-panel {
 
 #bulkTableContainer {
   box-shadow: none !important;
-      width: 100%;
+  width: auto !important; /* allow left/right fixed positioning to define width, avoids forcing extra full-width */
 }
 
 /* bundle-related styles removed (panel moved into domain headers) */
