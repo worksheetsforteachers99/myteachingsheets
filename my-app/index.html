@@ -2000,7 +2000,7 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                 </td>
                 <td class="generated-time"></td>
                 <td class="menu-cell package menu-cell-padding">
-                    <button class="btn-package" id="pkg_${grade}_${code}" onclick="handlePackageButtonClick('${code}', '${grade}', false, currentUser.username)">Generate</button>
+                    <button class="btn-package" disabled id="pkg_${grade}_${code}" onclick="handlePackageButtonClick('${code}', '${grade}', false, currentUser.username)">Generate</button>
                     <div class="spinner" id="spin_pkg_${code}"></div>
                 </td>`;
             // Ensure tbody is inside a .table-scroll-container
