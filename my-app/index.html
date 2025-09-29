@@ -1848,80 +1848,9 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             }
         }
 
-        // Attempt to auto-reconnect Google-connected account using saved idToken or
-        // silently via Google Identity auto_select. This will try the following:
-        // 1) If `authState.idToken` is present, call server `connectAccount` to verify
-        //    and restore accountName/email. 2) If that fails, initialize Google
-        //    Identity with `auto_select: true` which will silently select a previously
-        //   -granted credential when available (no popup). This improves UX for
-        //    returning users who previously connected their Google account.
-        async function tryAutoReconnect() {
-            // 1) Try saved idToken first
-            try {
-                const auth = getAuthState();
-                if (auth && auth.idToken) {
-                    // verify with server by calling connectAccount via proxy
-                    try {
-                        const res = await fetch('/api/gas', {
-                            method: 'POST',
-                            headers: { 'Content-Type':'application/json' },
-                            body: JSON.stringify({ action: 'connectAccount', payload: { idToken: auth.idToken } })
-                        });
-                        const json = await res.json();
-                        if (json && json.ok !== false && json.data) {
-                            const data = json.data || {};
-                            // restore authState fields (in case server returned name/email/accountName)
-                            setAuthState({ idToken: auth.idToken, name: data.name || auth.name || '', email: data.email || auth.email || '', accountName: data.accountName || auth.accountName || '' });
-                            // Update UI
-                            updateUserProfile({ username: data.name || auth.email || currentUser.username, accountName: data.accountName || '', email: data.email || '' });
-                            if (document.getElementById('dropdownEmail')) document.getElementById('dropdownEmail').textContent = 'Email: ' + (data.email || auth.email || '');
-                            showMainApp();
-                            return true;
-                        }
-                    } catch (e) {
-                        console.warn('Saved idToken verification failed:', e);
-                    }
-                }
-            } catch (e) {
-                console.warn('tryAutoReconnect (saved token) error', e);
-            }
-
-            // 2) Fallback: try Google Identity auto_select (silent)
-            try {
-                if (window.google && google.accounts && google.accounts.id) {
-                    // initialize with auto_select; callback will be called only if
-                    // Google can silently provide a credential for this origin.
-                    google.accounts.id.initialize({
-                        client_id: GOOGLE_CLIENT_ID,
-                        callback: async function(resp) {
-                            if (resp && resp.credential) {
-                                // Reuse existing onGoogleCredentialResponse flow
-                                await onGoogleCredentialResponse(resp);
-                            }
-                        },
-                        auto_select: true,
-                        ux_mode: 'popup'
-                    });
-                    // Prompt with auto_select; this should not show UI if silent
-                    google.accounts.id.prompt();
-                    // We don't know synchronously if auto_select succeeded; the callback
-                    // will call showMainApp when appropriate. Return false for now.
-                    return false;
-                }
-            } catch (e) {
-                console.warn('tryAutoReconnect (google.auto_select) error', e);
-            }
-
-            return false;
-        }
-
         // Call checkSession on page load - with guard to prevent duplicate bindings
         if (!window.__CHECK_SESSION_BOUND__) {
-            document.addEventListener("DOMContentLoaded", () => { 
-                checkSession();
-                // Also attempt to auto-reconnect Google-connected account for returning users
-                tryAutoReconnect().catch(e => console.warn('autoReconnect error', e));
-            });
+            document.addEventListener("DOMContentLoaded", () => { checkSession(); });
             window.__CHECK_SESSION_BOUND__ = true;
         }
 
