@@ -307,13 +307,7 @@
                 if (document.getElementById('profileAccount')) document.getElementById('profileAccount').textContent = data.accountName || data.name || data.email || 'Account Name';
                 if (document.getElementById('dropdownAccount')) document.getElementById('dropdownAccount').textContent = data.accountName || data.name || data.email || 'Account Name';
                 alert('Connected as ' + (data.accountName || data.name || data.email || 'unknown'));
-                // After successful Google connect, populate the selection panel and load previous lessons
-                try {
-                    if (typeof populateSubjects === 'function') populateSubjects();
-                    if (typeof loadPrevious === 'function') loadPrevious();
-                } catch (err) {
-                    console.warn('Post-connect population failed', err);
-                }
+                // After successful Google connect: selections are already loaded on page start; no need to reload them here.
             } catch (e) {
                 console.error('connectAccount failed', e);
                 alert(e && e.message ? e.message : 'Failed to connect account');
