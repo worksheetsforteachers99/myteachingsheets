@@ -61,6 +61,7 @@
             <div class="earnings-display" id="earningsDisplay" aria-hidden="true">
                 <!-- earnings icon removed per user preference; only the currency text should display -->
                 <span id="earningsAmount">LKR 0.00</span>
+                <span id="earningsError" style="display:none; color:#b00020; margin-left:8px; font-size:0.85rem;"></span>
             </div>
 
             <div class="user-profile" id="userProfile">
@@ -543,9 +544,14 @@
 
         // Fetch lesson price from server and update the earnings display
         async function fetchPrice() {
+            const errEl = document.getElementById('earningsError');
             try {
+                if (earningsAmount) earningsAmount.textContent = 'Loading...';
+                if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
                 // Use our api proxy which forwards to Apps Script
                 const price = await api('getLessonPrice');
+                // api() returns the data field from the server; it may be an object or number
                 const num = (typeof price === 'number') ? price : parseFloat(String(price).replace(/[^0-9.-]+/g, '')) || 0;
                 if (earningsAmount) earningsAmount.textContent = `LKR ${num.toFixed(2)}`;
                 currentUser.earnings = num;
@@ -553,6 +559,10 @@
                 return num;
             } catch (err) {
                 console.error('fetchPrice failed', err);
+                // Show a helpful message to the user about possible misconfiguration
+                const msg = (err && err.message) ? err.message : 'Unable to load price';
+                if (errEl) { errEl.style.display = 'inline'; errEl.textContent = msg; }
+                if (earningsAmount) earningsAmount.textContent = 'LKR --';
                 return 0;
             }
         }
