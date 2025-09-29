@@ -558,6 +558,18 @@ function showMainApp() {
       populateLessonSuggestions();
     }
     // Bundle panel no longer uses tick/check UI
+
+        // Auto-connect Google account if available and not already connected
+        try {
+            const authState = (function(){ try { return JSON.parse(localStorage.getItem('authState')||'{}'); } catch(e){ return {}; } })();
+            const alreadyConnected = Boolean((authState && authState.idToken) || (currentUser && currentUser.accountName));
+            if (!alreadyConnected && window.google && google.accounts && google.accounts.id && typeof connectAccount === 'function') {
+                // Delay slightly to avoid interrupting other init tasks
+                setTimeout(() => {
+                    try { connectAccount(); } catch (e) { console.warn('Auto-connect failed', e); }
+                }, 400);
+            }
+        } catch (e) { /* ignore */ }
 }
 
 // Function to populate subjects and standards dropdowns
@@ -1760,16 +1772,6 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             setTimeout(() => {
                 setLoading(false);
                 showMainApp();
-                // Auto-initiate Google Connect if available and not already connected
-                try {
-                    const auth = getAuthState();
-                    if (!auth || !auth.idToken) {
-                        if (window.google && google.accounts && google.accounts.id && typeof connectAccount === 'function') {
-                            // Prompt the user to connect their Google account (popup)
-                            connectAccount();
-                        }
-                    }
-                } catch (e) { /* ignore errors */ }
             }, 1500);
         }
         
@@ -1793,14 +1795,6 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             setTimeout(() => {
                 setLoading(false);
                 showMainApp();
-                try {
-                    const auth = getAuthState();
-                    if (!auth || !auth.idToken) {
-                        if (window.google && google.accounts && google.accounts.id && typeof connectAccount === 'function') {
-                            connectAccount();
-                        }
-                    }
-                } catch (e) { /* ignore errors */ }
             }, 1500);
         }
 
