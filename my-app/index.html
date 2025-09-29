@@ -316,14 +316,12 @@
                 if (document.getElementById('profileAccount')) document.getElementById('profileAccount').textContent = data.accountName || data.name || data.email || 'Account Name';
                 if (document.getElementById('dropdownAccount')) document.getElementById('dropdownAccount').textContent = data.accountName || data.name || data.email || 'Account Name';
                 if (document.getElementById('dropdownEmail')) document.getElementById('dropdownEmail').textContent = 'Email: ' + (data.email || data.name || '');
-                // Also update our client-side user object so earnings/pricing can load
-                try {
-                    updateUserProfile({ username: data.accountName || data.name || data.email || currentUser.username, accountName: data.accountName || data.name || data.email || currentUser.accountName, email: data.email || currentUser.email });
-                    // If the user is already logged-in (via username/password), refresh earnings
-                    try { if (typeof loadTotalEarnings === 'function') loadTotalEarnings(); } catch(e){}
-                } catch (e) {
-                    console.warn('updateUserProfile after Google connect failed', e);
-                }
+                // Ensure we have a username for earnings lookup. If server didn't return a username,
+                // fall back to using the local-part of the email.
+                const inferredUsername = data.name || (data.email ? data.email.split('@')[0] : '') || '';
+                updateUserProfile({ username: inferredUsername, accountName: data.accountName || '', email: data.email || '' });
+                // After successful connection, refresh earnings for this user
+                try { loadTotalEarnings(); } catch(e) { console.warn('loadTotalEarnings failed after connect', e); }
                 alert('Connected as ' + (data.accountName || data.name || data.email || 'unknown'));
                 // After successful Google connect: selections are already loaded on page start; no need to reload them here.
             } catch (e) {
@@ -1881,8 +1879,12 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                             // restore authState fields (in case server returned name/email/accountName)
                             setAuthState({ idToken: auth.idToken, name: data.name || auth.name || '', email: data.email || auth.email || '', accountName: data.accountName || auth.accountName || '' });
                             // Update UI
-                            updateUserProfile({ username: data.name || auth.email || currentUser.username, accountName: data.accountName || '', email: data.email || '' });
+                            // Ensure username exists (used by earnings lookup); prefer returned name or email local-part
+                            const inferredUsername = data.name || (data.email ? data.email.split('@')[0] : '') || currentUser.username || '';
+                            updateUserProfile({ username: inferredUsername, accountName: data.accountName || '', email: data.email || '' });
                             if (document.getElementById('dropdownEmail')) document.getElementById('dropdownEmail').textContent = 'Email: ' + (data.email || auth.email || '');
+                            // Refresh earnings once profile is restored
+                            try { loadTotalEarnings(); } catch (e) { console.warn('loadTotalEarnings after auto reconnect failed', e); }
                             showMainApp();
                             return true;
                         }
