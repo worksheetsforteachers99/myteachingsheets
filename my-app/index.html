@@ -557,19 +557,21 @@ function showMainApp() {
     if (typeof populateLessonSuggestions === 'function') {
       populateLessonSuggestions();
     }
+        // Auto-prompt Google Connect if identity library is available and user is not connected
+        (function tryAutoPromptGoogleConnect() {
+            try {
+                const authState = (function(){ try { return JSON.parse(localStorage.getItem('authState')||'{}'); } catch(e){ return {}; } })();
+                const alreadyConnected = Boolean((authState && authState.idToken) || (currentUser && currentUser.accountName));
+                if (!alreadyConnected && window.google && google.accounts && google.accounts.id && typeof google.accounts.id.initialize === 'function' && typeof onGoogleCredentialResponse === 'function') {
+                    try {
+                        google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredentialResponse, ux_mode: 'popup' });
+                        // give UI a moment to settle before prompting
+                        setTimeout(() => { try { google.accounts.id.prompt(); } catch(e) { /* ignore */ } }, 350);
+                    } catch (e) { console.warn('auto Google connect init failed', e); }
+                }
+            } catch (e) { /* ignore */ }
+        })();
     // Bundle panel no longer uses tick/check UI
-
-        // Auto-connect Google account if available and not already connected
-        try {
-            const authState = (function(){ try { return JSON.parse(localStorage.getItem('authState')||'{}'); } catch(e){ return {}; } })();
-            const alreadyConnected = Boolean((authState && authState.idToken) || (currentUser && currentUser.accountName));
-            if (!alreadyConnected && window.google && google.accounts && google.accounts.id && typeof connectAccount === 'function') {
-                // Delay slightly to avoid interrupting other init tasks
-                setTimeout(() => {
-                    try { connectAccount(); } catch (e) { console.warn('Auto-connect failed', e); }
-                }, 400);
-            }
-        } catch (e) { /* ignore */ }
 }
 
 // Function to populate subjects and standards dropdowns
