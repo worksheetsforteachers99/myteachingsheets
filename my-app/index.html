@@ -310,7 +310,7 @@
                 // After successful Google connect, populate the selection panel and load previous lessons
                 try {
                     if (typeof populateSubjects === 'function') populateSubjects();
-                    if (!localStorage.getItem('gradeLevel') && typeof loadPrevious === 'function') loadPrevious();
+                    if (typeof loadPrevious === 'function') loadPrevious();
                 } catch (err) {
                     console.warn('Post-connect population failed', err);
                 }
@@ -552,10 +552,8 @@ function showMainApp() {
     // Determine connection state (used to gate population of selection panel and previous lessons)
     const authState = (function(){ try { return JSON.parse(localStorage.getItem('authState')||'{}'); } catch(e){ return {}; } })();
     const isConnected = Boolean((authState && authState.idToken) || (currentUser && currentUser.accountName));
-        // Only load table immediately if no saved gradeLevel exists
-        if (!localStorage.getItem('gradeLevel')) {
-            loadPrevious();
-        }
+        // Load previous lessons table
+        loadPrevious();
         // Load total earnings
         loadTotalEarnings();
     
@@ -595,10 +593,7 @@ async function populateSubjects() {
   // Restore worksheet type if previously saved
   const worksheetTypeDropdown = document.getElementById('bulkWorksheetType');
   if (worksheetTypeDropdown) {
-    const savedWorksheetType = localStorage.getItem('sel_worksheet_type');
-    if (savedWorksheetType && [...worksheetTypeDropdown.options].some(o => o.value === savedWorksheetType)) {
-      worksheetTypeDropdown.value = savedWorksheetType;
-    }
+        // Do not restore previously selected worksheet type from localStorage
   }
 
     // Track whether the user has manually interacted with any of the bulk selects.
@@ -632,19 +627,13 @@ async function populateSubjects() {
                 o.value = s; o.textContent = s;
                 subjectDropdown.appendChild(o);
             });
-            // Restore last chosen subject and cascade — only if user hasn't interacted yet
-            const savedSubject = localStorage.getItem('sel_subject');
-            if (!window._bulkUserInteracted && savedSubject && [...subjectDropdown.options].some(o => o.value === savedSubject)) {
-                subjectDropdown.value = savedSubject;
-                subjectDropdown.dispatchEvent(new Event('change'));
-            }
+            // Do not restore previously saved subject from localStorage
         } catch (err) {
             console.error('Failed to load subjects', err);
         }
 
   // ② When Subject changes → load filtered Standards
     subjectDropdown.addEventListener('change', async function () {
-    localStorage.setItem('sel_subject', this.value);
     const subj = this.value;
     if (typeof loadPrevious === 'function') loadPrevious();
     // Reset downstream selects (guard existence)
@@ -669,11 +658,7 @@ async function populateSubjects() {
                 standardDropdown.appendChild(o);
             });
             // Restore last chosen standard and cascade — only if user hasn't interacted yet
-            const savedStandard = localStorage.getItem('sel_standard');
-            if (!window._bulkUserInteracted && savedStandard && [...standardDropdown.options].some(o => o.value === savedStandard)) {
-                standardDropdown.value = savedStandard;
-                standardDropdown.dispatchEvent(new Event('change'));
-            }
+            // Do not restore previously saved standard from localStorage
             standardDropdown.disabled = (standards || []).length === 0;
             setSelectsDisabledExcept([], false);
         } catch (err) {
@@ -685,7 +670,6 @@ async function populateSubjects() {
 
   // When Standard changes → load filtered Grades
     standardDropdown.addEventListener('change', async function () {
-    localStorage.setItem('sel_standard', this.value);
     const standard = this.value;
     if (typeof loadPrevious === 'function') loadPrevious();
     const subject  = document.getElementById('bulkSubject').value;
@@ -712,11 +696,7 @@ async function populateSubjects() {
                 o.value = o.textContent = g;
                 gradeDropdown.appendChild(o);
             });
-            const savedGrade = localStorage.getItem('gradeLevel');
-            if (!window._bulkUserInteracted && savedGrade && [...gradeDropdown.options].some(o => o.value === savedGrade)) {
-                gradeDropdown.value = savedGrade;
-                gradeDropdown.dispatchEvent(new Event('change'));
-            }
+            // Do not restore previously saved grade from localStorage
             gradeDropdown.disabled = (grades || []).length === 0;
             setSelectsDisabledExcept([], false);
         } catch (err) {
@@ -728,7 +708,6 @@ async function populateSubjects() {
 
   // When Grade changes → load filtered Domains
     gradeDropdown.addEventListener('change', async function () {
-    localStorage.setItem('gradeLevel', this.value);
 
     // ✅ Add this line so the table rebuilds for the new grade
     if (typeof loadPrevious === 'function') loadPrevious();
@@ -756,12 +735,7 @@ async function populateSubjects() {
                 o.value = o.textContent = dom;
                 domainDropdown.appendChild(o);
             });
-            const savedDomain = localStorage.getItem('sel_domain');
-            if (!window._bulkUserInteracted && savedDomain && [...domainDropdown.options].some(o => o.value === savedDomain)) {
-                domainDropdown.value = savedDomain;
-                domainDropdown.dispatchEvent(new Event('change'));
-                if (typeof loadPrevious === 'function') loadPrevious();
-            }
+            // Do not restore previously saved domain from localStorage
             domainDropdown.disabled = (domains || []).length === 0;
             setSelectsDisabledExcept([], false);
         } catch (err) {
@@ -3064,7 +3038,7 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
         document.getElementById('bulkWorksheetType')
             .addEventListener('change', function() {
                 // Save selection to localStorage
-                localStorage.setItem('sel_worksheet_type', this.value);
+                // Do not persist selected worksheet type to localStorage
                 // Reload history with new type
                 loadPrevious();
             });
