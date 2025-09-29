@@ -6,6 +6,8 @@
     <title>Worksheet Generator</title>
     <!-- replace GAS style include with local stylesheet -->
     <link rel="stylesheet" href="/style.css">
+    <!-- Google Identity Services (used for Connect Account) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <!-- Floating Lesson Search Panel -->
@@ -80,8 +82,6 @@
                         <button class="dropdown-item" id="templateButton">Template</button>
                         <button class="dropdown-item">Profile Settings</button>
                         <button class="dropdown-item" id="payoutMethodButton">Payout Method</button>
-                        <!-- Connect Account: will attempt Google Sign-In if configured, else fallback to email entry -->
-                        <button class="dropdown-item" id="connectAccountBtn">Connect Account</button>
                         <button class="dropdown-item">Settings</button>
                         <div class="dropdown-item dropdown-prompts" id="promptItem" tabindex="0">Prompts
                             <div class="tutorials-submenu" id="promptsSubmenu" aria-hidden="true">
@@ -92,6 +92,9 @@
                         <div class="dropdown-item dropdown-tutorials" id="tutorialsItem" tabindex="0">Tutorials
                             <div class="tutorials-submenu" id="tutorialsSubmenu" aria-hidden="true"></div>
                         </div>
+                        <li style="list-style:none; padding:0; margin:0;">
+                          <button class="dropdown-item" id="btnConnectAccount">Connect Account</button>
+                        </li>
                         <button class="dropdown-item logout" id="logoutButton">Logout</button>
                     </div>
                 </div>
@@ -100,24 +103,6 @@
     </header>
         </div>
     </header>
-
-            <!-- Connect Account Modal (fallback if Google Sign-In not configured) -->
-            <div id="connectAccountModal" class="modal" style="display:none;">
-                <div class="modal-dialog">
-                    <h3>Connect Account</h3>
-                    <p id="connectHelp">You can sign in with Google (if enabled) or enter your Google email to link an account.</p>
-                    <form id="connectEmailForm">
-                        <label for="connectEmail">Google Email</label>
-                        <input type="email" id="connectEmail" name="connectEmail" placeholder="you@example.com" required />
-                        <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
-                            <button type="submit" class="btn-package">Connect</button>
-                            <button type="button" class="btn-form" id="connectCancelBtn">Cancel</button>
-                        </div>
-                    </form>
-                    <div id="connectAccountMessage" style="margin-top:8px; color:#c00; display:none;"></div>
-                </div>
-            </div>
-
 
     <!-- Main Content Area -->
     <div class="main-content">
@@ -262,6 +247,75 @@
             if (!json || json.ok === false) throw new Error(json && json.error ? json.error : 'Request failed');
             return json.data;
         }
+
+        // ---------- Google Connect Account helpers ----------
+        // Replace with your actual Google OAuth client ID (provided by user)
+        const GOOGLE_CLIENT_ID = '95964277982-ikq921neqlu7g9gdd4qrvljgvud0l1t0.apps.googleusercontent.com';
+
+        function setAuthState(state) {
+            try { localStorage.setItem('authState', JSON.stringify(state || {})); } catch (e) {}
+        }
+        function getAuthState() {
+            try { return JSON.parse(localStorage.getItem('authState') || '{}'); } catch (e) { return {}; }
+        }
+
+        // Wrap existing api so every call sends auth info when available
+        (function wrapApiWithAuth() {
+            const _apiOrig = window.api;
+            window.api = async function(action, payload) {
+                payload = payload || {};
+                const auth = getAuthState();
+                if (auth && auth.idToken) {
+                    payload.auth = payload.auth || {};
+                    payload.auth.idToken = auth.idToken;
+                    payload.auth.name = auth.name || '';
+                    payload.auth.email = auth.email || '';
+                }
+                return _apiOrig(action, payload);
+            };
+        })();
+
+        // Connect Account button handler (opens Google Identity prompt)
+        async function connectAccount() {
+            if (!(window.google && google.accounts && google.accounts.id)) {
+                alert('Google sign-in not loaded. Please try again shortly.');
+                return;
+            }
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: onGoogleCredentialResponse,
+                ux_mode: 'popup'
+            });
+            google.accounts.id.prompt();
+        }
+
+        async function onGoogleCredentialResponse(resp) {
+            try {
+                const idToken = resp && resp.credential;
+                if (!idToken) throw new Error('No Google credential returned');
+                // Send idToken to server to verify and resolve account
+                const res = await fetch('/api/gas', {
+                    method: 'POST',
+                    headers: { 'Content-Type':'application/json' },
+                    body: JSON.stringify({ action: 'connectAccount', payload: { idToken } })
+                });
+                const json = await res.json();
+                if (!json || json.ok === false) throw new Error(json && json.error ? json.error : 'Failed to connect account');
+                const data = json.data || {};
+                setAuthState({ idToken, name: data.name || '', email: data.email || '', accountName: data.accountName || '' });
+                // Update UI
+                if (document.getElementById('profileAccount')) document.getElementById('profileAccount').textContent = data.accountName || data.name || data.email || 'Account Name';
+                if (document.getElementById('dropdownAccount')) document.getElementById('dropdownAccount').textContent = data.accountName || data.name || data.email || 'Account Name';
+                alert('Connected as ' + (data.accountName || data.name || data.email || 'unknown'));
+            } catch (e) {
+                console.error('connectAccount failed', e);
+                alert(e && e.message ? e.message : 'Failed to connect account');
+            }
+        }
+
+        // Wire the Connect Account button click (safe attach)
+        if (document.getElementById('btnConnectAccount')) document.getElementById('btnConnectAccount').addEventListener('click', connectAccount);
+
 
         // --- tiny DOM helpers to safely attach listeners and avoid null errors ---
         const $ = (id) => document.getElementById(id);
