@@ -80,6 +80,8 @@
                         <button class="dropdown-item" id="templateButton">Template</button>
                         <button class="dropdown-item">Profile Settings</button>
                         <button class="dropdown-item" id="payoutMethodButton">Payout Method</button>
+                        <!-- Connect Account: will attempt Google Sign-In if configured, else fallback to email entry -->
+                        <button class="dropdown-item" id="connectAccountBtn">Connect Account</button>
                         <button class="dropdown-item">Settings</button>
                         <div class="dropdown-item dropdown-prompts" id="promptItem" tabindex="0">Prompts
                             <div class="tutorials-submenu" id="promptsSubmenu" aria-hidden="true">
@@ -98,6 +100,24 @@
     </header>
         </div>
     </header>
+
+            <!-- Connect Account Modal (fallback if Google Sign-In not configured) -->
+            <div id="connectAccountModal" class="modal" style="display:none;">
+                <div class="modal-dialog">
+                    <h3>Connect Account</h3>
+                    <p id="connectHelp">You can sign in with Google (if enabled) or enter your Google email to link an account.</p>
+                    <form id="connectEmailForm">
+                        <label for="connectEmail">Google Email</label>
+                        <input type="email" id="connectEmail" name="connectEmail" placeholder="you@example.com" required />
+                        <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
+                            <button type="submit" class="btn-package">Connect</button>
+                            <button type="button" class="btn-form" id="connectCancelBtn">Cancel</button>
+                        </div>
+                    </form>
+                    <div id="connectAccountMessage" style="margin-top:8px; color:#c00; display:none;"></div>
+                </div>
+            </div>
+
 
     <!-- Main Content Area -->
     <div class="main-content">
