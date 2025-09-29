@@ -345,10 +345,11 @@
 
                 const res = await api('loginUser', { username, password });
                 if (res && res.success) {
+                    // update profile and then redirect to standalone homepage
                     updateUserProfile?.(res.user || { username });
-                    showMainApp?.();
-                    const loginContainer = $('loginContainer'); if (loginContainer) loginContainer.style.display = 'none';
-                    const appHeader = $('appHeader'); if (appHeader) appHeader.style.display = 'flex';
+                    try { localStorage.setItem('just_logged_in_v1', '1'); } catch(e) {}
+                    // redirect to the standalone home page where first-visit modal will appear
+                    window.location.href = '/home.html';
                 } else {
                     // Prefer server-provided message when available
                     showMessage?.(res && res.message ? res.message : 'Invalid username or password', 'error');
