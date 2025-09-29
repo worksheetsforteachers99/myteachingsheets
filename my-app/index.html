@@ -76,6 +76,7 @@
                     <div class="dropdown-header">
                         <div class="dropdown-username" id="dropdownUsername">Username</div>
                         <div class="dropdown-account" id="dropdownAccount">Account Name</div>
+                        <div class="dropdown-email" id="dropdownEmail" style="font-size:0.85rem; color:#6c757d;">Email: -</div>
                         <div class="dropdown-id" id="dropdownId" style="font-size:0.85rem; color:#6c757d;">ID: -</div>
                     </div>
                     <div class="dropdown-menu">
@@ -306,6 +307,7 @@
                 // Update UI
                 if (document.getElementById('profileAccount')) document.getElementById('profileAccount').textContent = data.accountName || data.name || data.email || 'Account Name';
                 if (document.getElementById('dropdownAccount')) document.getElementById('dropdownAccount').textContent = data.accountName || data.name || data.email || 'Account Name';
+                if (document.getElementById('dropdownEmail')) document.getElementById('dropdownEmail').textContent = 'Email: ' + (data.email || data.name || '');
                 alert('Connected as ' + (data.accountName || data.name || data.email || 'unknown'));
                 // After successful Google connect: selections are already loaded on page start; no need to reload them here.
             } catch (e) {
