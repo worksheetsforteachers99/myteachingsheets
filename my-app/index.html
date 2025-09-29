@@ -592,20 +592,23 @@ async function populateSubjects() {
         // Do not restore previously selected worksheet type from localStorage
   }
 
-    // Track whether the user has manually interacted with any of the bulk selects.
-    // Programmatic dispatchEvent(...) calls have event.isTrusted === false, so we only
-    // set this flag when the user actually changes a control.
-    window._bulkUserInteracted = window._bulkUserInteracted || false;
-    function markBulkUserInteracted(ev) {
-        try {
-            if (ev && ev.isTrusted) window._bulkUserInteracted = true;
-        } catch (e) { /* ignore */ }
-    }
-    // Attach lightweight listeners that mark real user actions.
-    [subjectDropdown, standardDropdown, gradeDropdown, domainDropdown, lessonDropdown].forEach(el => {
-        if (!el) return;
-        el.addEventListener('change', markBulkUserInteracted);
-    });
+        // NEW: simple unique filter (extra safety in the client)
+        const uniq = arr => [...new Set((arr||[]).map(s => String(s).trim()))].filter(Boolean);
+
+        // Track whether the user has manually interacted with any of the bulk selects.
+        // Programmatic dispatchEvent(...) calls have event.isTrusted === false, so we only
+        // set this flag when the user actually changes a control.
+        window._bulkUserInteracted = window._bulkUserInteracted || false;
+
+        // NEW: prevent adding duplicate listeners if this function runs again
+        if (!window._bulkListenersAdded) {
+            const markBulkUserInteracted = ev => { try { if (ev && ev.isTrusted) window._bulkUserInteracted = true; } catch(e){} };
+            [subjectDropdown, standardDropdown, gradeDropdown, domainDropdown, lessonDropdown].forEach(el => {
+                if (!el) return;
+                el.addEventListener('change', markBulkUserInteracted, { passive: true });
+            });
+            window._bulkListenersAdded = true;
+        }
 
     // Reset & disable dependent selects (guard existence)
     if (subjectDropdown) subjectDropdown.innerHTML  = '<option value="" disabled selected>Select subject</option>';
@@ -616,17 +619,22 @@ async function populateSubjects() {
     if (lessonDropdown) lessonDropdown.disabled = true;
 
         // ① Load Subjects via API proxy
-        try {
-            const subjects = await api('getSubjects');
-            (subjects || []).forEach(s => {
-                const o = document.createElement('option');
-                o.value = s; o.textContent = s;
-                subjectDropdown.appendChild(o);
-            });
-            // Do not restore previously saved subject from localStorage
-        } catch (err) {
-            console.error('Failed to load subjects', err);
-        }
+            // NEW: race guard for subjects
+            window._subjectsReqId = (window._subjectsReqId || 0) + 1;
+            const subjectsReqId = window._subjectsReqId;
+            try {
+                const raw = await api('getSubjects');
+                if (subjectsReqId !== window._subjectsReqId) return; // stale
+                const subjects = uniq(raw);
+                subjects.forEach(s => {
+                    const o = document.createElement('option');
+                    o.value = s; o.textContent = s;
+                    subjectDropdown.appendChild(o);
+                });
+                // Do not restore previously saved subject from localStorage
+            } catch (err) {
+                console.error('Failed to load subjects', err);
+            }
 
   // ② When Subject changes → load filtered Standards
     subjectDropdown.addEventListener('change', async function () {
@@ -646,8 +654,13 @@ async function populateSubjects() {
         // Disable all selects while standards are loading (including the one just changed)
         setSelectsDisabledExcept([], true);
         standardDropdown.disabled = true;
+        // NEW: race guard for standards
+        window._standardsReqId = (window._standardsReqId || 0) + 1;
+        const standardsReqId = window._standardsReqId;
         try {
-            const standards = await api('getStandardsForSubject', { subject: subj });
+            const raw = await api('getStandardsForSubject', { subject: subj });
+            if (standardsReqId !== window._standardsReqId) return; // stale
+            const standards = uniq(raw);
             (standards || []).forEach(st => {
                 const o = document.createElement('option');
                 o.value = o.textContent = st;
@@ -685,8 +698,13 @@ async function populateSubjects() {
         // Disable all selects while grades are loading (including the one just changed)
         setSelectsDisabledExcept([], true);
         gradeDropdown.disabled = true;
+        // NEW: race guard for grades
+        window._gradesReqId = (window._gradesReqId || 0) + 1;
+        const gradesReqId = window._gradesReqId;
         try {
-            const grades = await api('getGradesForSubjectAndStandard', { subject, standard });
+            const raw = await api('getGradesForSubjectAndStandard', { subject, standard });
+            if (gradesReqId !== window._gradesReqId) return; // stale
+            const grades = uniq(raw);
             (grades || []).forEach(g => {
                 const o = document.createElement('option');
                 o.value = o.textContent = g;
@@ -1904,15 +1922,20 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                       // Disable all selects while lesson codes are loading (including the domain select)
                       if (typeof window.setSelectsDisabledExcept === 'function') window.setSelectsDisabledExcept([], true);
                     lessonDropdown.disabled = true;
+                    // NEW: race guard for codes
+                    window._codesReqId = (window._codesReqId || 0) + 1;
+                    const codesReqId = window._codesReqId;
                     (async () => {
                         try {
-                            const codes = await api('getCodesForSubjectStandardGradeDomain', { subject, standard, grade, domain });
+                            const raw = await api('getCodesForSubjectStandardGradeDomain', { subject, standard, grade, domain });
+                            if (codesReqId !== window._codesReqId) return; // stale
+                            const codes = uniq(raw || raw);
                             codes.forEach(cd => {
                                 const o = document.createElement('option');
                                 o.value = o.textContent = cd;
                                 lessonDropdown.appendChild(o);
                             });
-                            lessonDropdown.disabled = codes.length === 0;
+                            lessonDropdown.disabled = (codes || []).length === 0;
                         } catch (err) {
                             console.error('Failed to load lesson codes', err);
                             lessonDropdown.disabled = true;
