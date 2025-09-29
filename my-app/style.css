@@ -179,7 +179,9 @@
           border-radius:12px;
           box-shadow: 0 6px 18px rgba(16,42,67,0.06);
           margin: 14px 0;
-          overflow:hidden;
+          /* allow horizontal scrolling for wide tables instead of clipping */
+          overflow-x: auto;
+          overflow-y: visible;
         }
 
         .domain-card__header{
@@ -204,6 +206,8 @@
         .domain-card__header .domain-actions .btn-icon svg { width:16px; height:16px; }
 
         .domain-table{ width:100%; border-collapse: separate; border-spacing:0; table-layout: fixed; }
+  /* Ensure table can be wider than its container and trigger horizontal scroll when needed */
+  .domain-card .domain-table { min-width: 820px; }
         .domain-table thead th{
           background: var(--brand); color:#fff; font-weight:600;
           padding:10px 12px; text-align:left; position: sticky; top: 44px; z-index: 1;
