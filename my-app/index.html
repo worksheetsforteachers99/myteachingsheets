@@ -1743,7 +1743,11 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
 
         // Call checkSession on page load - with guard to prevent duplicate bindings
         if (!window.__CHECK_SESSION_BOUND__) {
-            document.addEventListener("DOMContentLoaded", () => { checkSession(); });
+            document.addEventListener("DOMContentLoaded", () => { 
+                checkSession();
+                // Ensure the subjects select is populated early for the selection panel
+                try { if (typeof populateSubjects === 'function') populateSubjects(); } catch (e) { console.warn('populateSubjects not available at load:', e); }
+            });
             window.__CHECK_SESSION_BOUND__ = true;
         }
 
