@@ -316,6 +316,14 @@
                 if (document.getElementById('profileAccount')) document.getElementById('profileAccount').textContent = data.accountName || data.name || data.email || 'Account Name';
                 if (document.getElementById('dropdownAccount')) document.getElementById('dropdownAccount').textContent = data.accountName || data.name || data.email || 'Account Name';
                 if (document.getElementById('dropdownEmail')) document.getElementById('dropdownEmail').textContent = 'Email: ' + (data.email || data.name || '');
+                // Also update our client-side user object so earnings/pricing can load
+                try {
+                    updateUserProfile({ username: data.accountName || data.name || data.email || currentUser.username, accountName: data.accountName || data.name || data.email || currentUser.accountName, email: data.email || currentUser.email });
+                    // If the user is already logged-in (via username/password), refresh earnings
+                    try { if (typeof loadTotalEarnings === 'function') loadTotalEarnings(); } catch(e){}
+                } catch (e) {
+                    console.warn('updateUserProfile after Google connect failed', e);
+                }
                 alert('Connected as ' + (data.accountName || data.name || data.email || 'unknown'));
                 // After successful Google connect: selections are already loaded on page start; no need to reload them here.
             } catch (e) {
