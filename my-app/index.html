@@ -3062,9 +3062,23 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
     </script>
 
     <script>
-        // Ensure subjects are loaded on initial page load
+        // Ensure subjects and previously created lessons are loaded on initial page load
         document.addEventListener('DOMContentLoaded', () => {
             try { if (typeof populateSubjects === 'function') populateSubjects(); } catch (e) { console.error('populateSubjects failed on DOMContentLoaded', e); }
+
+            // Also fetch previous lessons state for the main UI
+            (async () => {
+                try {
+                    const lessons = await api('getLessonsWithState');
+                    window._allLessons = lessons || [];
+                    // Call an existing renderer if present (some apps use renderPreviousLessons or similar)
+                    if (typeof renderPreviousLessons === 'function') {
+                        try { renderPreviousLessons(window._allLessons); } catch (err) { console.error('renderPreviousLessons failed', err); }
+                    }
+                } catch (err) {
+                    console.error('Failed to load previous lessons:', err);
+                }
+            })();
         });
     </script>
 
