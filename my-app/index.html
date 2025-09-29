@@ -31,6 +31,23 @@
         <select id="bulkGrade">
             <option value="" disabled selected>Select grade</option>
         </select>
+
+        <label for="bulkDomain">Domain</label>
+        <select id="bulkDomain">
+            <option value="" disabled selected>Select domain</option>
+        </select>
+
+        <label for="bulkLesson">Code</label>
+        <select id="bulkLesson">
+            <option value="" disabled selected>Select code</option>
+        </select>
+
+        <label for="bulkWorksheetType">Worksheet Type</label>
+        <select id="bulkWorksheetType">
+            <option value="" disabled selected>Select worksheet type</option>
+            <option value="Reading Comprehension">Reading Comprehension</option>
+            <option value="True Or False with Passage">True Or False with Passage</option>
+            <option value="Test Paper">Test Paper</option>
         </select>
     
     <!-- App header (shows when logged in) -->
@@ -513,11 +530,13 @@ async function populateSubjects() {
         el.addEventListener('change', markBulkUserInteracted);
     });
 
-  // Reset & disable dependent selects
-  subjectDropdown.innerHTML  = '<option value="" disabled selected>Select subject</option>';
-  standardDropdown.innerHTML = '<option value="" disabled selected>Select standard</option>';
-  standardDropdown.disabled = true; gradeDropdown.disabled = true;
-  domainDropdown.disabled   = true; lessonDropdown.disabled = true;
+    // Reset & disable dependent selects (guard existence)
+    if (subjectDropdown) subjectDropdown.innerHTML  = '<option value="" disabled selected>Select subject</option>';
+    if (standardDropdown) standardDropdown.innerHTML = '<option value="" disabled selected>Select standard</option>';
+    if (standardDropdown) standardDropdown.disabled = true;
+    if (gradeDropdown) gradeDropdown.disabled = true;
+    if (domainDropdown) domainDropdown.disabled   = true;
+    if (lessonDropdown) lessonDropdown.disabled = true;
 
         // ① Load Subjects via API proxy
         try {
@@ -542,10 +561,14 @@ async function populateSubjects() {
     localStorage.setItem('sel_subject', this.value);
     const subj = this.value;
     if (typeof loadPrevious === 'function') loadPrevious();
-    // Reset downstream selects
-    standardDropdown.innerHTML = '<option value="" disabled selected>Select standard</option>';
-    gradeDropdown.value = ''; domainDropdown.value = ''; lessonDropdown.value = '';
-    gradeDropdown.disabled = true; domainDropdown.disabled = true; lessonDropdown.disabled = true;
+    // Reset downstream selects (guard existence)
+    if (standardDropdown) standardDropdown.innerHTML = '<option value="" disabled selected>Select standard</option>';
+    if (gradeDropdown) gradeDropdown.value = '';
+    if (domainDropdown) domainDropdown.value = '';
+    if (lessonDropdown) lessonDropdown.value = '';
+    if (gradeDropdown) gradeDropdown.disabled = true;
+    if (domainDropdown) domainDropdown.disabled = true;
+    if (lessonDropdown) lessonDropdown.disabled = true;
 
     if (!subj) { standardDropdown.disabled = true; return; }
 
@@ -584,10 +607,12 @@ async function populateSubjects() {
     const domainDropdown = document.getElementById('bulkDomain');
     const lessonDropdown = document.getElementById('bulkLesson');
 
-    // reset downstream
-    gradeDropdown.innerHTML  = '<option value="" disabled selected>Select grade</option>';
-    domainDropdown.value = ''; lessonDropdown.value = '';
-    domainDropdown.disabled = true; lessonDropdown.disabled = true;
+    // reset downstream (guard existence)
+    if (gradeDropdown) gradeDropdown.innerHTML  = '<option value="" disabled selected>Select grade</option>';
+    if (domainDropdown) domainDropdown.value = '';
+    if (lessonDropdown) lessonDropdown.value = '';
+    if (domainDropdown) domainDropdown.disabled = true;
+    if (lessonDropdown) lessonDropdown.disabled = true;
 
     if (!standard) { gradeDropdown.disabled = true; return; }
 
@@ -1807,8 +1832,9 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
         const bulkDomain = document.getElementById('bulkDomain');
         const bulkLesson = document.getElementById('bulkLesson');
         
-        // Populate lesson codes on domain change in Bulk Mode
-        document.getElementById('bulkDomain').addEventListener('change', function () {
+    // Populate lesson codes on domain change in Bulk Mode
+    const _bulkDomainEl = document.getElementById('bulkDomain');
+    if (_bulkDomainEl) _bulkDomainEl.addEventListener('change', function () {
           const domain = this.value;
           const subject  = document.getElementById('bulkSubject').value;
           const standard = document.getElementById('bulkStandard').value;
@@ -1839,7 +1865,7 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                             if (typeof window.setSelectsDisabledExcept === 'function') window.setSelectsDisabledExcept([], false);
                         }
                     })();
-        });
+    });
 
         // Lesson codes are now loaded dynamically from the sheet via getCodesForSubjectStandardGradeDomain
 
