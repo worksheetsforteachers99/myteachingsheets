@@ -179,9 +179,7 @@
           border-radius:12px;
           box-shadow: 0 6px 18px rgba(16,42,67,0.06);
           margin: 14px 0;
-          /* allow horizontal scrolling for wide tables instead of clipping */
-          overflow-x: auto;
-          overflow-y: visible;
+          overflow:hidden;
         }
 
         .domain-card__header{
@@ -206,8 +204,6 @@
         .domain-card__header .domain-actions .btn-icon svg { width:16px; height:16px; }
 
         .domain-table{ width:100%; border-collapse: separate; border-spacing:0; table-layout: fixed; }
-  /* Ensure table can be wider than its container and trigger horizontal scroll when needed */
-  .domain-card .domain-table { min-width: 820px; }
         .domain-table thead th{
           background: var(--brand); color:#fff; font-weight:600;
           padding:10px 12px; text-align:left; position: sticky; top: 44px; z-index: 1;
@@ -219,6 +215,30 @@
         }
         .domain-table tbody tr:nth-child(odd){ background:#fafbfd; }
         .domain-table tbody tr:hover{ background:#f5fbff; }
+
+        /* Wrapper used by scripts that inject large tables; keep them inside viewport with horizontal scroll */
+        .table-scroll-container {
+          width: 100%;
+          overflow-x: auto;
+          overflow-y: auto;
+          /* Make vertical space fit inside the viewport below the fixed header */
+          max-height: calc(100vh - var(--header-height) - var(--footer-height) - 40px);
+          -webkit-overflow-scrolling: touch;
+        }
+
+        /* Generic table fallback rules for injected #bulkTable and other wide tables */
+        #bulkTable, .domain-table, .shared-header-table {
+          width: 100%;
+          table-layout: fixed; /* allow columns to respect colgroup widths and avoid exploding width */
+          border-collapse: separate;
+        }
+
+        /* Prevent table content from pushing the page horizontally; allow cell content to ellipsize if too long */
+        #bulkTable td, #bulkTable th, .domain-table td, .domain-table th {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
 
         /* Keep only the Package column sticky on the right */
         .domain-table th.menu-cell, .domain-table td.menu-cell{ z-index: 2; background: #fff; }
