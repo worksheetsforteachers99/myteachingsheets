@@ -19,8 +19,139 @@
       --col-worksheet:160px;
       --col-answer:   160px;
       --col-lastedit: 110px;
-  --col-package:  140px;
+      --col-package:  140px;
     }
+/* Hide header & footer by default on login; show after .app-mode */
+.app-header { display: none !important; }
+.site-footer { display: none !important; }
+.app-mode .app-header { display: flex !important; }
+.app-mode .site-footer { display: block !important; }
+
+/* Extra guard: ensure header/footer remain hidden when body lacks .app-mode */
+body:not(.app-mode) .app-header { display: none !important; }
+body:not(.app-mode) .site-footer { display: none !important; }
+
+/* Split auth shell (reference-style) */
+.auth-shell{
+  width: 100%;
+  max-width: 980px;
+  min-height: 520px;
+  display: grid;
+  grid-template-columns: 44% 56%;
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(16,42,67,.12);
+  overflow: hidden;
+}
+
+/* Left brand panel */
+.auth-left{
+  background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 40px;
+  position: relative;
+}
+.brand-badge{
+  width: 56px; height: 56px; border-radius: 14px;
+  display:flex; align-items:center; justify-content:center;
+  background: rgba(255,255,255,0.15);
+  font-weight: 800; letter-spacing:.5px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  transform-origin: center;
+  /* subtle float + pulse to bring attention without being distracting */
+  animation: badgeFloat 4s ease-in-out infinite, badgePulse 6s ease-in-out infinite;
+}
+
+/* small moving shimmer for the badge */
+.brand-badge::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.04) 100%);
+  transform: translateX(-110%);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  animation: badgeShimmer 2.8s linear infinite;
+}
+
+@keyframes badgeFloat{
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes badgePulse{
+  0%, 100% { box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+  50% { box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+}
+
+@keyframes badgeShimmer{
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(110%); }
+}
+
+/* Respect user's reduced motion preference */
+@media (prefers-reduced-motion: reduce){
+  .brand-badge, .brand-badge::before { animation: none !important; transform: none !important; }
+}
+.brand-title{ margin: 20px 0 6px; font-size: 28px; line-height: 1.2; }
+.brand-copy{ opacity: .9; }
+
+/* Right form panel */
+.auth-right{
+  display:flex; flex-direction:column; justify-content:center;
+  padding: 48px 44px;
+}
+.auth-heading{ color: var(--fg); font-size: 24px; margin-bottom: 18px; }
+
+/* Inputs & button match the reference look */
+.auth-right .form-group{ margin-bottom: 14px; }
+.auth-right label{ font-size: .9rem; color: #37516b; margin-bottom: 6px; display:block; }
+.auth-right input[type="text"],
+.auth-right input[type="password"]{
+  width:100%; border:1px solid #e3e8ee; border-radius: 12px;
+  padding: 12px 14px; font-size: 0.98rem; background:#f7fafc;
+}
+.login-btn{
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  background: #19b49b;
+  padding: 12px 16px;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing:.4px;
+  display:inline-flex; align-items:center; justify-content:center;
+  gap: 10px; margin-top: 10px;
+}
+.login-btn:disabled{ opacity:.75; }
+
+.auth-actions{
+  display:flex; gap:10px; margin-top: 12px;
+}
+.ghost-btn{
+  flex:1;
+  border:1px solid #e3e8ee;
+  background:#fff;
+  border-radius: 999px;
+  padding:10px 14px;
+  font-weight:600; color:#39536c;
+}
+
+/* Make it responsive */
+@media (max-width: 860px){
+  .auth-shell{ grid-template-columns: 1fr; }
+  .auth-left{ min-height: 180px; }
+}
+
+/* Center auth shell within main-content (existing container styles kept) */
+.main-content { 
+  flex: 1; display:flex; justify-content:center; align-items:center; padding:2rem;
+}
       /* Utilities and moved inline styles from index.html */
       /* Separator inside panels */
       #lesson-search-panel hr,
