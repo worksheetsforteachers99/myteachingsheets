@@ -2522,20 +2522,17 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
                 return;
             }
 
-            // Call server to get previous lesson codes and URLs with state
-            const isTF = document.getElementById("bulkWorksheetType").value === "True Or False with Passage";
-            const fn   = isTF ? "listPreviouslyGeneratedTF" : "listPreviouslyGenerated";
-                        // previous server callback removed; replaced by api() flow below
-            (async () => {
-                try {
-                    const previousItems = await api(fn, {});
-                    bulkTableContainer.classList.remove("table-blinking"); // Remove blinking class on success
+                        // Call server to get previous lesson codes and URLs with state (master sheet)
+                        (async () => {
+                                try {
+                                        const previousItems = await api('getLessonsWithState');
+                                        bulkTableContainer.classList.remove("table-blinking"); // Remove blinking class on success
 
-                    // Only display lessons for the current account
-                    const currentAccount = currentUser.accountName && currentUser.accountName.trim();
-                    let recentItems = (previousItems || []).filter(item => {
-                      return item.accountName && item.accountName.trim() === currentAccount;
-                    });
+                                        // Only display lessons for the current account
+                                        const currentAccount = (currentUser.accountName || '').trim();
+                                        let recentItems = (previousItems || []).filter(item => {
+                                            return item.accountName && item.accountName.trim() === currentAccount;
+                                        });
 
                     // Filter by the currently selected worksheet type
                     const selectedType = document.getElementById("bulkWorksheetType").value.trim();
