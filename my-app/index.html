@@ -374,15 +374,14 @@
         const packageButtonStates = {};
 
                         // Shared colgroup HTML used for consistent column widths across tables
-                        // Use flexible columns so tables can adapt to viewport width and avoid horizontal overflow
                         const COLGROUP_HTML = `
             <colgroup>
-                <col>
-                <col>
-                <col>
-                <col>
-                <col>
-                <col>
+                <col style="width:var(--col-grade)">
+                <col style="width:var(--col-lesson)">
+                <col style="width:var(--col-worksheet)">
+                <col style="width:var(--col-answer)">
+                <col style="width:var(--col-lastedit)">
+                <col style="width:var(--col-package)">
             </colgroup>`;
         
         // Login functionality
