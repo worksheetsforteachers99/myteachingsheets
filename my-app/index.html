@@ -317,6 +317,8 @@
                 if (document.getElementById('dropdownAccount')) document.getElementById('dropdownAccount').textContent = data.accountName || data.name || data.email || 'Account Name';
                 if (document.getElementById('dropdownEmail')) document.getElementById('dropdownEmail').textContent = 'Email: ' + (data.email || data.name || '');
                 alert('Connected as ' + (data.accountName || data.name || data.email || 'unknown'));
+                // Update price display after successful account connection
+                try { fetchPrice(); } catch (e) { /* ignore */ }
                 // After successful Google connect: selections are already loaded on page start; no need to reload them here.
             } catch (e) {
                 console.error('connectAccount failed', e);
@@ -537,6 +539,22 @@
             if (earningsAmount) earningsAmount.textContent = 'LKR 0.00';
             // Keep window.currentUser in sync for other included panels that read window.currentUser
             window.currentUser = currentUser;
+        }
+
+        // Fetch lesson price from server and update the earnings display
+        async function fetchPrice() {
+            try {
+                // Use our api proxy which forwards to Apps Script
+                const price = await api('getLessonPrice');
+                const num = (typeof price === 'number') ? price : parseFloat(String(price).replace(/[^0-9.-]+/g, '')) || 0;
+                if (earningsAmount) earningsAmount.textContent = `LKR ${num.toFixed(2)}`;
+                currentUser.earnings = num;
+                window.currentUser = currentUser;
+                return num;
+            } catch (err) {
+                console.error('fetchPrice failed', err);
+                return 0;
+            }
         }
         
 function showMainApp() {
