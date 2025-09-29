@@ -503,6 +503,8 @@ async function populateSubjects() {
             el.disabled = disabled && !keep.includes(id);
         });
     }
+    // Expose global helper so other handlers can call it (domain change uses window.setSelectsDisabledExcept)
+    window.setSelectsDisabledExcept = setSelectsDisabledExcept;
 
   if (!subjectDropdown || !standardDropdown) return;
 
@@ -3057,6 +3059,13 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
             
             animateValue();
         }
+    </script>
+
+    <script>
+        // Ensure subjects are loaded on initial page load
+        document.addEventListener('DOMContentLoaded', () => {
+            try { if (typeof populateSubjects === 'function') populateSubjects(); } catch (e) { console.error('populateSubjects failed on DOMContentLoaded', e); }
+        });
     </script>
 
     <!-- bundle panel scripts removed — functionality moved to domain header handlers -->
