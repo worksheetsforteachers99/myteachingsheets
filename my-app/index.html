@@ -552,18 +552,15 @@ function showMainApp() {
     // Determine connection state (used to gate population of selection panel and previous lessons)
     const authState = (function(){ try { return JSON.parse(localStorage.getItem('authState')||'{}'); } catch(e){ return {}; } })();
     const isConnected = Boolean((authState && authState.idToken) || (currentUser && currentUser.accountName));
-    // Only load table immediately if no saved gradeLevel exists AND the user is connected
-    if (!localStorage.getItem('gradeLevel') && isConnected) {
-        loadPrevious();
-    }
-    // Load total earnings
-    loadTotalEarnings();
-    if (isConnected) {
+        // Only load table immediately if no saved gradeLevel exists
+        if (!localStorage.getItem('gradeLevel')) {
+            loadPrevious();
+        }
+        // Load total earnings
+        loadTotalEarnings();
+    
+        // Load subjects into dropdown
         try { populateSubjects(); } catch(e) { console.warn('populateSubjects failed', e); }
-    } else {
-        // Not connected yet — skip populating subjects. They will be populated after Connect Account succeeds.
-        console.debug('Skipping populateSubjects until Google Connect');
-    }
     // Populate lesson suggestions for datalist after app and table are loaded
     if (typeof populateLessonSuggestions === 'function') {
       populateLessonSuggestions();
@@ -3148,26 +3145,21 @@ window.renderDomainCollageFromBase64List = async function ({ images, domain, sub
     <script>
         // Ensure subjects and previously created lessons are loaded on initial page load
         document.addEventListener('DOMContentLoaded', () => {
-            // Only populate subjects and previous lessons on DOMContentLoaded if already connected
-            const authState = (function(){ try { return JSON.parse(localStorage.getItem('authState')||'{}'); } catch(e){ return {}; } })();
-            const isConnected = Boolean((authState && authState.idToken) || (currentUser && currentUser.accountName));
-            if (isConnected) {
-                try { if (typeof populateSubjects === 'function') populateSubjects(); } catch (e) { console.error('populateSubjects failed on DOMContentLoaded', e); }
+            try { if (typeof populateSubjects === 'function') populateSubjects(); } catch (e) { console.error('populateSubjects failed on DOMContentLoaded', e); }
 
-                // Also fetch previous lessons state for the main UI
-                (async () => {
-                    try {
-                        const lessons = await api('getLessonsWithState');
-                        window._allLessons = lessons || [];
-                        // Call an existing renderer if present (some apps use renderPreviousLessons or similar)
-                        if (typeof renderPreviousLessons === 'function') {
-                            try { renderPreviousLessons(window._allLessons); } catch (err) { console.error('renderPreviousLessons failed', err); }
-                        }
-                    } catch (err) {
-                        console.error('Failed to load previous lessons:', err);
+            // Also fetch previous lessons state for the main UI
+            (async () => {
+                try {
+                    const lessons = await api('getLessonsWithState');
+                    window._allLessons = lessons || [];
+                    // Call an existing renderer if present (some apps use renderPreviousLessons or similar)
+                    if (typeof renderPreviousLessons === 'function') {
+                        try { renderPreviousLessons(window._allLessons); } catch (err) { console.error('renderPreviousLessons failed', err); }
                     }
-                })();
-            }
+                } catch (err) {
+                    console.error('Failed to load previous lessons:', err);
+                }
+            })();
         });
     </script>
 
