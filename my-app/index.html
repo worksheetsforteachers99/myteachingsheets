@@ -336,11 +336,19 @@
                 const res = await api('loginUser', { username, password });
                 if (res && res.success) {
                     updateUserProfile?.(res.user || { username });
-                    // Mark that user just logged in so showMainApp can do first-time loads
-                    try { window.__justLoggedIn = true; } catch (e) {}
                     showMainApp?.();
                     const loginContainer = $('loginContainer'); if (loginContainer) loginContainer.style.display = 'none';
                     const appHeader = $('appHeader'); if (appHeader) appHeader.style.display = 'flex';
+                    // NEW: auto-connect Google account after password login
+                    try {
+                        const auth = (typeof getAuthState === 'function') ? getAuthState() : (window.__authState || {});
+                        if (!auth || !auth.idToken) {
+                            // Only prompt if there isn't already an idToken stored
+                            connectAccount(); // opens the Google Identity popup and posts ID token to backend
+                        }
+                    } catch (e) {
+                        console.warn('Auto-connect after login failed:', e);
+                    }
                 } else {
                     // Prefer server-provided message when available
                     showMessage?.(res && res.message ? res.message : 'Invalid username or password', 'error');
@@ -548,16 +556,13 @@ function showMainApp() {
     // Determine connection state (used to gate population of selection panel and previous lessons)
     const authState = (function(){ try { return JSON.parse(localStorage.getItem('authState')||'{}'); } catch(e){ return {}; } })();
     const isConnected = Boolean((authState && authState.idToken) || (currentUser && currentUser.accountName));
-        // If this was called immediately after a successful login, run selection population and previous lessons load once
-        if (window.__justLoggedIn) {
-            try { if (typeof loadPrevious === 'function') loadPrevious(); } catch(e) { console.warn('loadPrevious failed', e); }
-            try { loadTotalEarnings(); } catch(e) { console.warn('loadTotalEarnings failed', e); }
-            try { if (typeof populateSubjects === 'function') populateSubjects(); } catch(e) { console.warn('populateSubjects failed', e); }
-            try { delete window.__justLoggedIn; } catch(e) { window.__justLoggedIn = false; }
-        } else {
-            // Normal show (not immediately after login) - only refresh earnings
-            try { loadTotalEarnings(); } catch(e) { console.warn('loadTotalEarnings failed', e); }
-        }
+        // Load previous lessons table
+        loadPrevious();
+        // Load total earnings
+        loadTotalEarnings();
+    
+        // Load subjects into dropdown
+        try { populateSubjects(); } catch(e) { console.warn('populateSubjects failed', e); }
     // Populate lesson suggestions for datalist after app and table are loaded
     if (typeof populateLessonSuggestions === 'function') {
       populateLessonSuggestions();
